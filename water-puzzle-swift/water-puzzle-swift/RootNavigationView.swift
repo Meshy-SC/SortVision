@@ -78,7 +78,8 @@ struct RootNavigationView: View {
     private func navigateToLevel(mode: GameMode, level: Level) {
         // Clear existing stack and push the full navigation path
         path = NavigationPath()
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+        Task {
+            try? await Task.sleep(for: .milliseconds(100))
             path.append(AppScreen.difficultySelect)
             path.append(AppScreen.levelGrid(mode))
             path.append(AppScreen.gameplay(mode, level))

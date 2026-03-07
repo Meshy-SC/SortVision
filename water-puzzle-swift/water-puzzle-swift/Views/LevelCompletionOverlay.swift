@@ -79,7 +79,8 @@ struct LevelCompletionOverlay: View {
         .onAppear {
             displayedMessage = toastMessages.randomElement() ?? "Great!"
             // Move VoiceOver focus to the overlay after a brief delay
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+            Task {
+                try? await Task.sleep(for: .milliseconds(500))
                 isOverlayFocused = true
             }
         }
