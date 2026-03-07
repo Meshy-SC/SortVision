@@ -40,6 +40,18 @@ struct LevelTileView: View {
             }
         }
         .disabled(isLocked)
+        .contextMenu {
+            if !isLocked {
+                Button {
+                    action()
+                } label: {
+                    Label(
+                        isCompleted ? "Replay Level \(levelNumber)" : "Play Level \(levelNumber)",
+                        systemImage: isCompleted ? "arrow.counterclockwise" : "play.fill"
+                    )
+                }
+            }
+        }
         .accessibilityLabel(accessibilityLabelText)
         .accessibilityHint(isLocked ? "Level is locked" : "Double tap to play level \(levelNumber)")
         .accessibilityAddTraits(isLocked ? .isButton : [.isButton])

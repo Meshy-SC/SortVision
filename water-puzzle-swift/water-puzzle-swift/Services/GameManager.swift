@@ -1,5 +1,6 @@
 import Foundation
 import Observation
+import WidgetKit
 
 /// Central game state manager responsible for level data and progress tracking.
 ///
@@ -169,6 +170,9 @@ final class GameManager {
         if number > current {
             completedLevels[mode] = number
             UserDefaults.standard.set(number, forKey: mode.completionKey)
+
+            // Update Home Screen widget with latest progress
+            WidgetCenter.shared.reloadAllTimelines()
         }
     }
 }

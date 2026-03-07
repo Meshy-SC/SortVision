@@ -26,7 +26,8 @@ struct GameplayView: View {
                     .ignoresSafeArea()
             }
 
-            // HUD overlay — extracted to GameHUDView for single responsibility
+            // HUD overlay (iOS & macOS) — on visionOS the HUD is an ornament
+            #if !os(visionOS)
             GameHUDView(
                 levelNumber: level.number,
                 onHome: {
@@ -37,6 +38,7 @@ struct GameplayView: View {
                     scene?.restart()
                 }
             )
+            #endif
 
             // Level complete overlay
             if showLevelComplete {
@@ -57,6 +59,35 @@ struct GameplayView: View {
             value: showLevelComplete
         )
         .navigationBarBackButtonHidden(true)
+        #if os(visionOS)
+        // visionOS: Non-blocking ornament at the bottom edge of the window
+        .ornament(attachmentAnchor: .scene(.bottom)) {
+            HStack(spacing: 20) {
+                Button {
+                    path.removeLast(path.count)
+                } label: {
+                    Label("Home", systemImage: "house.fill")
+                }
+                .accessibilityHint("Returns to main menu")
+
+                Text("Level \(level.number)")
+                    .font(.system(.headline, design: .rounded, weight: .bold))
+                    .accessibilityAddTraits(.isHeader)
+
+                Button {
+                    showLevelComplete = false
+                    scene?.restart()
+                } label: {
+                    Label("Restart", systemImage: "arrow.counterclockwise")
+                }
+                .accessibilityHint("Resets the current puzzle")
+            }
+            .buttonStyle(.bordered)
+            .padding(.horizontal, 24)
+            .padding(.vertical, 12)
+            .glassBackgroundEffect()
+        }
+        #endif
         #if os(iOS)
         .sensoryFeedback(.success, trigger: showLevelComplete)
         #endif

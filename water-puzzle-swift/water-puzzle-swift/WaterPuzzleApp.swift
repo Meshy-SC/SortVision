@@ -28,3 +28,9 @@ struct WaterPuzzleApp: App {
         #endif
     }
 }
+
+// MARK: - URL Scheme
+// Register "waterpuzzle" in Info.plist > URL Types for deep link support:
+//   URL Schemes: waterpuzzle
+//   URL Identifier: $(PRODUCT_BUNDLE_IDENTIFIER)
+// This enables Widget and Shortcuts integration via waterpuzzle://play?mode=0&level=5
