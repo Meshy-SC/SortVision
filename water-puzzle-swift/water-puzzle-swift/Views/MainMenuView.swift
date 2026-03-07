@@ -32,30 +32,18 @@ struct MainMenuView: View {
 
                 Spacer()
 
-                // Play button — mirrors Unity MenuPanel play button
-                Button {
+                // Play button — uses built-in borderedProminent style
+                // Automatic Liquid Glass on iOS 26+; platform-adaptive on macOS & visionOS
+                Button("PLAY") {
                     path.append(AppScreen.difficultySelect)
-                } label: {
-                    Text("PLAY")
-                        .font(.system(size: 24, weight: .bold, design: .rounded))
-                        .foregroundStyle(.white)
-                        .frame(width: 220, height: 64)
-                        .background(
-                            RoundedRectangle(cornerRadius: 16)
-                                .fill(
-                                    LinearGradient(
-                                        colors: [
-                                            Color(red: 0.16, green: 0.50, blue: 0.73),
-                                            Color(red: 0.20, green: 0.60, blue: 0.86),
-                                        ],
-                                        startPoint: .top, endPoint: .bottom
-                                    )
-                                )
-                        )
-                        .shadow(color: .blue.opacity(0.3), radius: 8, y: 4)
                 }
+                .font(.system(size: 24, weight: .bold, design: .rounded))
+                .buttonStyle(.borderedProminent)
+                .tint(Color(red: 0.16, green: 0.50, blue: 0.73))
+                .controlSize(.extraLarge)
+                .buttonBorderShape(.roundedRectangle(radius: 16))
 
-                // Sound toggle — mirrors Unity SoundButton
+                // Sound toggle — uses built-in bordered circular button style
                 Button {
                     gameManager.soundEnabled.toggle()
                 } label: {
@@ -63,11 +51,10 @@ struct MainMenuView: View {
                         systemName: gameManager.soundEnabled
                             ? "speaker.wave.2.fill" : "speaker.slash.fill"
                     )
-                    .font(.title2)
-                    .foregroundStyle(.white.opacity(0.7))
-                    .frame(width: 50, height: 50)
-                    .background(Circle().fill(.white.opacity(0.1)))
                 }
+                .buttonStyle(.bordered)
+                .buttonBorderShape(.circle)
+                .tint(.white)
 
                 Spacer()
                     .frame(height: 60)

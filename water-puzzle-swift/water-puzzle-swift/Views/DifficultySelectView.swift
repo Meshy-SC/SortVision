@@ -32,7 +32,8 @@ struct DifficultySelectView: View {
 
                 Spacer()
 
-                // Difficulty buttons — mirrors Unity difficulty_ui_beginner/advanced/expert sprites
+                // Difficulty buttons — uses built-in borderedProminent style
+                // Automatic Liquid Glass on iOS 26+; platform-adaptive sizing
                 ForEach(modes, id: \.mode) { item in
                     Button {
                         path.append(AppScreen.levelGrid(item.mode))
@@ -45,18 +46,13 @@ struct DifficultySelectView: View {
                             let total = gameManager.levels(for: item.mode).count
                             Text("\(completed)/\(total)")
                                 .font(.callout)
-                                .foregroundStyle(.white.opacity(0.7))
                         }
-                        .foregroundStyle(.white)
-                        .padding(.horizontal, 30)
-                        .frame(height: 65)
                         .frame(maxWidth: 320)
-                        .background(
-                            RoundedRectangle(cornerRadius: 16)
-                                .fill(item.color.opacity(0.75))
-                        )
-                        .shadow(color: item.color.opacity(0.3), radius: 6, y: 3)
                     }
+                    .buttonStyle(.borderedProminent)
+                    .tint(item.color)
+                    .controlSize(.large)
+                    .buttonBorderShape(.roundedRectangle(radius: 16))
                 }
 
                 Spacer()

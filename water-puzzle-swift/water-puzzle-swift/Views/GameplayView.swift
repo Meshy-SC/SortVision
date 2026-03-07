@@ -26,16 +26,15 @@ struct GameplayView: View {
             // HUD overlay — mirrors Unity Game/UIManager buttons
             VStack {
                 HStack(spacing: 16) {
-                    // Menu/Home button — mirrors Unity ic_menu
+                    // Menu/Home button — uses built-in bordered circular button
                     Button {
                         path.removeLast(path.count)
                     } label: {
                         Image(systemName: "house.fill")
-                            .font(.title3)
-                            .foregroundStyle(.white.opacity(0.85))
-                            .frame(width: 44, height: 44)
-                            .background(Circle().fill(.white.opacity(0.1)))
                     }
+                    .buttonStyle(.bordered)
+                    .buttonBorderShape(.circle)
+                    .tint(.white)
 
                     Spacer()
 
@@ -46,17 +45,16 @@ struct GameplayView: View {
 
                     Spacer()
 
-                    // Restart button — mirrors Unity ic_replay
+                    // Restart button — uses built-in bordered circular button
                     Button {
                         showLevelComplete = false
                         scene?.restart()
                     } label: {
                         Image(systemName: "arrow.counterclockwise")
-                            .font(.title3)
-                            .foregroundStyle(.white.opacity(0.85))
-                            .frame(width: 44, height: 44)
-                            .background(Circle().fill(.white.opacity(0.1)))
                     }
+                    .buttonStyle(.bordered)
+                    .buttonBorderShape(.circle)
+                    .tint(.white)
                 }
                 .padding(.horizontal, 20)
                 .padding(.top, 12)

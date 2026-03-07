@@ -36,49 +36,37 @@ struct LevelCompleteView: View {
                     .foregroundStyle(.white)
 
                 VStack(spacing: 16) {
-                    // Continue button — mirrors Unity LevelCompletePanel continue
+                    // Continue button — uses built-in borderedProminent style
                     if gameManager.hasNextLevel(mode: gameMode, after: levelNumber) {
-                        Button {
+                        Button("Continue") {
                             if let nextLevel = gameManager.level(
                                 for: gameMode, number: levelNumber + 1)
                             {
                                 path.removeLast()
                                 path.append(AppScreen.gameplay(gameMode, nextLevel))
                             }
-                        } label: {
-                            Text("Continue")
-                                .font(.system(size: 20, weight: .bold, design: .rounded))
-                                .foregroundStyle(.white)
-                                .frame(width: 200, height: 55)
-                                .background(
-                                    RoundedRectangle(cornerRadius: 14)
-                                        .fill(Color.green.opacity(0.85))
-                                )
-                                .shadow(color: .green.opacity(0.3), radius: 6, y: 3)
                         }
+                        .font(.system(size: 20, weight: .bold, design: .rounded))
+                        .buttonStyle(.borderedProminent)
+                        .tint(.green)
+                        .controlSize(.large)
+                        .buttonBorderShape(.roundedRectangle(radius: 14))
                     }
 
-                    // Main Menu button — mirrors Unity LevelCompletePanel menu
-                    Button {
+                    // Main Menu button — uses built-in borderedProminent style
+                    Button("Main Menu") {
                         path.removeLast(path.count)
-                    } label: {
-                        Text("Main Menu")
-                            .font(.system(size: 20, weight: .bold, design: .rounded))
-                            .foregroundStyle(.white)
-                            .frame(width: 200, height: 55)
-                            .background(
-                                RoundedRectangle(cornerRadius: 14)
-                                    .fill(Color.gray.opacity(0.5))
-                            )
                     }
+                    .font(.system(size: 20, weight: .bold, design: .rounded))
+                    .buttonStyle(.borderedProminent)
+                    .tint(.gray)
+                    .controlSize(.large)
+                    .buttonBorderShape(.roundedRectangle(radius: 14))
                 }
             }
             .padding(40)
-            .background(
-                RoundedRectangle(cornerRadius: 24)
-                    .fill(Color(red: 0.14, green: 0.17, blue: 0.24))
-                    .shadow(color: .black.opacity(0.4), radius: 20)
-            )
+            .background(.ultraThickMaterial, in: RoundedRectangle(cornerRadius: 24))
+            .shadow(radius: 20)
         }
         .onAppear {
             displayedMessage = toastMessages.randomElement() ?? "Great!"

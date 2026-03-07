@@ -222,39 +222,35 @@ final class GameScene: SKScene {
 
     // MARK: - Win Effects
 
-    /// Programmatic confetti effect replacing the Unity WinEffect particle prefab.
+    /// Confetti effect using SKEmitterNode — Apple's built-in GPU-accelerated particle system.
+    /// Replaces 60 manually-animated SKShapeNodes with efficient particle emitters.
     private func createConfettiEffect() {
-        let confettiColors = ColorPalette.colors
+        let colors = ColorPalette.colors
+        let particlesPerColor = max(60 / colors.count, 1)
 
-        for _ in 0..<60 {
-            let confetti = SKShapeNode(rectOf: CGSize(width: 8, height: 8), cornerRadius: 2)
-            confetti.fillColor = confettiColors.randomElement() ?? .white
-            confetti.strokeColor = .clear
-            confetti.position = CGPoint(
-                x: CGFloat.random(in: size.width * 0.1...size.width * 0.9),
-                y: size.height + 20
-            )
-            confetti.zPosition = 200
-            addChild(confetti)
+        for color in colors {
+            let emitter = SKEmitterNode()
+            emitter.numParticlesToEmit = particlesPerColor
+            emitter.particleBirthRate = CGFloat(particlesPerColor) * 4
+            emitter.particleLifetime = 2.5
+            emitter.particleLifetimeRange = 1.0
+            emitter.position = CGPoint(x: size.width / 2, y: size.height + 20)
+            emitter.particlePositionRange = CGVector(dx: size.width * 0.8, dy: 0)
+            emitter.yAcceleration = -200
+            emitter.particleSpeed = 80
+            emitter.particleSpeedRange = 40
+            emitter.emissionAngle = .pi * 1.5
+            emitter.emissionAngleRange = .pi * 0.5
+            emitter.particleAlphaSpeed = -0.4
+            emitter.particleRotationSpeed = .pi * 2
+            emitter.particleRotationRange = .pi * 2
+            emitter.particleSize = CGSize(width: 8, height: 8)
+            emitter.particleColor = color
+            emitter.particleColorBlendFactor = 1.0
+            emitter.zPosition = 200
+            addChild(emitter)
 
-            let fallDuration = Double.random(in: 1.5...3.0)
-            let targetY = CGFloat.random(in: -50...size.height * 0.3)
-            let drift = CGFloat.random(in: -100...100)
-
-            let fall = SKAction.moveTo(y: targetY, duration: fallDuration)
-            fall.timingMode = .easeIn
-            let driftAction = SKAction.moveBy(x: drift, y: 0, duration: fallDuration)
-            let rotate = SKAction.rotate(
-                byAngle: .pi * CGFloat.random(in: 2...6),
-                duration: fallDuration
-            )
-            let fade = SKAction.fadeOut(withDuration: fallDuration * 0.3)
-            let delayedFade = SKAction.sequence([
-                SKAction.wait(forDuration: fallDuration * 0.7), fade,
-            ])
-
-            let group = SKAction.group([fall, driftAction, rotate, delayedFade])
-            confetti.run(SKAction.sequence([group, .removeFromParent()]))
+            emitter.run(.sequence([.wait(forDuration: 5.0), .removeFromParent()]))
         }
     }
 
