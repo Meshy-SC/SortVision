@@ -174,7 +174,11 @@ struct WaterPuzzleWidgetView: View {
     }
 
     private func deepLinkURL(mode: GameMode, level: Int) -> URL {
-        URL(string: "waterpuzzle://play?mode=\(mode.rawValue)&level=\(level)")!
+        // Values are developer-controlled integers, but avoid force-unwrap as defensive practice
+        guard let url = URL(string: "waterpuzzle://play?mode=\(mode.rawValue)&level=\(level)") else {
+            return URL(string: "waterpuzzle://play")!
+        }
+        return url
     }
 }
 

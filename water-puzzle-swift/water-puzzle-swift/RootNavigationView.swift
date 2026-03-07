@@ -58,7 +58,8 @@ struct RootNavigationView: View {
               let mode = GameMode(rawValue: modeRaw),
               let levelStr = components.queryItems?.first(where: { $0.name == "level" })?.value,
               let levelNum = Int(levelStr),
-              let level = gameManager.level(for: mode, number: levelNum)
+              let level = gameManager.level(for: mode, number: levelNum),
+              !gameManager.isLevelLocked(mode: mode, number: levelNum)
         else { return }
 
         navigateToLevel(mode: mode, level: level)
