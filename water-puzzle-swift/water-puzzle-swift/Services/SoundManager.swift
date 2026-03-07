@@ -35,6 +35,7 @@ enum GameSound: String, CaseIterable, Sendable {
 /// ```swift
 /// SoundManager.shared.play(.pop, on: someNode)
 /// ```
+@MainActor
 final class SoundManager {
 
     // MARK: - Singleton

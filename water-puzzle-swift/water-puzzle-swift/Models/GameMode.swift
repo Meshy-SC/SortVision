@@ -2,11 +2,13 @@ import Foundation
 
 /// Mirrors the Unity GameMode enum: Easy, Normal, Hard.
 /// Adds Expert for the fourth level file (levels-ex.json).
-enum GameMode: Int, CaseIterable, Codable, Sendable {
+enum GameMode: Int, CaseIterable, Codable, Sendable, Identifiable {
     case easy = 0
     case normal = 1
     case hard = 2
     case expert = 3
+
+    var id: Int { rawValue }
 
     var displayName: String {
         switch self {

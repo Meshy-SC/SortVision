@@ -90,7 +90,7 @@ struct LevelColumn: Codable, Sendable, Hashable {
 ///
 /// Produced by compressing consecutive same-color values in a `LevelColumn`.
 /// Used by `HolderNode.initialize(with:)` to populate tubes at level start.
-struct LiquidData: Sendable {
+struct LiquidData: Sendable, Equatable, Hashable {
     /// Index into `ColorPalette.colors` (0–10).
     let groupId: Int
 

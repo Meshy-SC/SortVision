@@ -15,7 +15,7 @@ import Observation
 ///
 /// ## Unity Equivalent
 /// Mirrors Unity's `ResourceManager` (level loading) + `GameManager` (progress tracking).
-@Observable
+@MainActor @Observable
 final class GameManager {
 
     // MARK: - Singleton
@@ -99,14 +99,14 @@ final class GameManager {
         do {
             data = try Data(contentsOf: url)
         } catch {
-            throw LevelLoadingError.fileReadFailed(mode.jsonFileName, error)
+            throw LevelLoadingError.fileReadFailed(mode.jsonFileName, error.localizedDescription)
         }
 
         do {
             let group = try JSONDecoder().decode(LevelGroup.self, from: data)
             return group.levels
         } catch {
-            throw LevelLoadingError.decodingFailed(mode.jsonFileName, error)
+            throw LevelLoadingError.decodingFailed(mode.jsonFileName, error.localizedDescription)
         }
     }
 
@@ -179,24 +179,24 @@ final class GameManager {
 ///
 /// Captured per-mode in `GameManager.levelLoadingErrors` for diagnostics
 /// without crashing the app when a single mode's data is unavailable.
-enum LevelLoadingError: LocalizedError {
+enum LevelLoadingError: LocalizedError, Sendable {
     /// The JSON resource file was not found in the app bundle.
     case resourceNotFound(String)
 
     /// The file exists but could not be read from disk.
-    case fileReadFailed(String, Error)
+    case fileReadFailed(String, String)
 
     /// The file was read but JSON decoding failed.
-    case decodingFailed(String, Error)
+    case decodingFailed(String, String)
 
     var errorDescription: String? {
         switch self {
         case .resourceNotFound(let name):
             "Level resource '\(name).json' not found in app bundle."
-        case .fileReadFailed(let name, let error):
-            "Failed to read '\(name).json': \(error.localizedDescription)"
-        case .decodingFailed(let name, let error):
-            "Failed to decode '\(name).json': \(error.localizedDescription)"
+        case .fileReadFailed(let name, let description):
+            "Failed to read '\(name).json': \(description)"
+        case .decodingFailed(let name, let description):
+            "Failed to decode '\(name).json': \(description)"
         }
     }
 }

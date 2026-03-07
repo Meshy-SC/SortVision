@@ -9,7 +9,7 @@ import SwiftUI
 ///
 /// Used with `NavigationStack(path:)` in `ContentView` for
 /// declarative, type-safe navigation throughout the app.
-enum AppScreen: Hashable {
+enum AppScreen: Hashable, Sendable {
     /// Difficulty selection screen (Easy, Normal, Hard, Expert).
     case difficultySelect
 
