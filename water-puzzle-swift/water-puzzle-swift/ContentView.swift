@@ -9,14 +9,15 @@ enum AppScreen: Hashable {
 }
 
 /// Level needs Hashable conformance for NavigationPath.
-/// Two levels are considered equal if they have the same level number.
+/// Two levels are equal if they have the same number AND the same map data.
 extension Level: Hashable {
     nonisolated static func == (lhs: Level, rhs: Level) -> Bool {
-        lhs.no == rhs.no
+        lhs.no == rhs.no && lhs.map == rhs.map
     }
 
     nonisolated func hash(into hasher: inout Hasher) {
         hasher.combine(no)
+        hasher.combine(map)
     }
 }
 

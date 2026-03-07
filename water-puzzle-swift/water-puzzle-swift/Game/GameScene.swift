@@ -258,6 +258,9 @@ final class GameScene: SKScene {
 
     /// Remove all holders and reload the level from scratch.
     func restart() {
+        // Cancel any pending actions on the scene (e.g. onLevelComplete delay from gameOver)
+        removeAllActions()
+
         holders.forEach { $0.removeFromParent() }
         holders.removeAll()
         isTransferring = false

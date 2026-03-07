@@ -36,8 +36,16 @@ struct Level: Codable, Sendable, Identifiable {
     }
 }
 
-struct LevelColumn: Codable, Sendable {
+struct LevelColumn: Codable, Sendable, Hashable {
     let values: [Int]
+
+    nonisolated static func == (lhs: LevelColumn, rhs: LevelColumn) -> Bool {
+        lhs.values == rhs.values
+    }
+
+    nonisolated func hash(into hasher: inout Hasher) {
+        hasher.combine(values)
+    }
 }
 
 struct LiquidData: Sendable {

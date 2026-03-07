@@ -238,9 +238,14 @@ final class HolderNode: SKNode {
 
         isPending = false
         zPosition = 100
+        removeAllActions()
 
         let isRightSide = target.position.x > self.position.x
         let signedAngle = isRightSide ? -Self.pourAngle : Self.pourAngle
+
+        // Use originalPoint (not self.position) so the tube returns to its
+        // non-elevated position after pouring, not the pending-lifted position.
+        let sourceStartPos = originalPoint
 
         // Side delivery point (top-left or top-right of tube in local coords)
         // Mirrors Unity Holder._leftSideDeliverPoint / _rightSideDeliverPoint
@@ -274,10 +279,8 @@ final class HolderNode: SKNode {
         // Near-target intermediate position (for smooth approach)
         let nearTargetPos = CGPoint(
             x: target.position.x + (isRightSide ? -Self.outerWidth * 0.8 : Self.outerWidth * 0.8),
-            y: self.position.y + 30
+            y: sourceStartPos.y + 30
         )
-
-        let sourceStartPos = self.position
 
         // Calculate transfer values
         let sourceStartValue = sourceLiquid.value
