@@ -8,6 +8,7 @@ struct GameplayView: View {
     let level: Level
     @Binding var path: NavigationPath
     @Environment(GameManager.self) private var gameManager
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     @State private var scene: GameScene?
     @State private var showLevelComplete = false
@@ -18,6 +19,8 @@ struct GameplayView: View {
             if let scene {
                 SpriteView(scene: scene)
                     .ignoresSafeArea()
+                    .accessibilityLabel("Water sort puzzle, level \(level.number)")
+                    .accessibilityHint("Tap tubes to select and pour water between them")
             } else {
                 Color(red: 0.12, green: 0.15, blue: 0.22)
                     .ignoresSafeArea()
@@ -42,11 +45,21 @@ struct GameplayView: View {
                     levelNumber: level.number,
                     path: $path
                 )
-                .transition(.opacity.combined(with: .scale(scale: 0.9)))
+                .transition(
+                    reduceMotion
+                        ? .opacity
+                        : .opacity.combined(with: .scale(scale: 0.9))
+                )
             }
         }
-        .animation(.easeInOut(duration: 0.3), value: showLevelComplete)
+        .animation(
+            reduceMotion ? .none : .easeInOut(duration: 0.3),
+            value: showLevelComplete
+        )
         .navigationBarBackButtonHidden(true)
+        #if os(iOS)
+        .sensoryFeedback(.success, trigger: showLevelComplete)
+        #endif
         .onAppear {
             if scene == nil {
                 createScene()
@@ -59,6 +72,7 @@ struct GameplayView: View {
         gameScene.scaleMode = .aspectFill
         gameScene.level = level
         gameScene.gameMode = gameMode
+        gameScene.reduceMotion = reduceMotion
 
         // Bridge SpriteKit callbacks to SwiftUI layer
         gameScene.onLevelComplete = {

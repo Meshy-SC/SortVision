@@ -26,6 +26,9 @@ final class GameScene: SKScene {
     /// provides this closure to bridge back to the data layer.
     var onSaveProgress: (@MainActor (GameMode, Int) -> Void)?
 
+    /// Whether to reduce motion effects (respects system accessibility setting).
+    var reduceMotion: Bool = false
+
     // MARK: - Game State
 
     private var holders: [HolderNode] = []
@@ -204,8 +207,10 @@ final class GameScene: SKScene {
             onSaveProgress?(gameMode, level.number)
         }
 
-        // Show confetti effect
-        createConfettiEffect()
+        // Show confetti effect (skip if reduce motion is on)
+        if !reduceMotion {
+            createConfettiEffect()
+        }
 
         // Notify SwiftUI after a short delay
         let wait = SKAction.wait(forDuration: 1.2)

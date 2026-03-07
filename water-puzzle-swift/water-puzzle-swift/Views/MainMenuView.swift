@@ -3,6 +3,7 @@ import SwiftUI
 /// Main menu screen. Mirrors Unity's MainMenu scene with MenuPanel.
 struct MainMenuView: View {
     @Environment(GameManager.self) private var gameManager
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Binding var path: NavigationPath
 
     var body: some View {
@@ -17,12 +18,15 @@ struct MainMenuView: View {
                 // Game title — mirrors the logo sprite
                 VStack(spacing: 8) {
                     Text("Water Sort")
-                        .font(.system(size: 48, weight: .bold, design: .rounded))
+                        .font(.system(.largeTitle, design: .rounded, weight: .bold))
                         .foregroundStyle(.white)
                     Text("Puzzle")
-                        .font(.system(size: 36, weight: .medium, design: .rounded))
+                        .font(.system(.title, design: .rounded, weight: .medium))
                         .foregroundStyle(.white.opacity(0.8))
                 }
+                .accessibilityElement(children: .combine)
+                .accessibilityAddTraits(.isHeader)
+                .accessibilityLabel("Water Sort Puzzle")
 
                 Spacer()
 
@@ -31,11 +35,13 @@ struct MainMenuView: View {
                 Button("PLAY") {
                     path.append(AppScreen.difficultySelect)
                 }
-                .font(.system(size: 24, weight: .bold, design: .rounded))
+                .font(.system(.title2, design: .rounded, weight: .bold))
                 .buttonStyle(.borderedProminent)
                 .tint(Color(red: 0.16, green: 0.50, blue: 0.73))
                 .controlSize(.extraLarge)
                 .buttonBorderShape(.roundedRectangle(radius: 16))
+                .accessibilityHint("Opens difficulty selection")
+                .keyboardShortcut(.defaultAction)
 
                 // Sound toggle — uses built-in bordered circular button style
                 Button {
@@ -49,11 +55,20 @@ struct MainMenuView: View {
                 .buttonStyle(.bordered)
                 .buttonBorderShape(.circle)
                 .tint(.white)
+                .accessibilityLabel(gameManager.soundEnabled ? "Sound on" : "Sound off")
+                .accessibilityHint("Double tap to toggle sound effects")
+                #if os(iOS)
+                .sensoryFeedback(.selection, trigger: gameManager.soundEnabled)
+                #endif
 
                 Spacer()
                     .frame(height: 60)
             }
         }
+        .navigationTitle("Water Sort Puzzle")
+        #if os(iOS)
+        .toolbarVisibility(.hidden, for: .navigationBar)
+        #endif
         .navigationBarBackButtonHidden(true)
     }
 }

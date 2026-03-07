@@ -28,7 +28,7 @@ struct LevelTileView: View {
                 } else {
                     VStack(spacing: 2) {
                         Text("\(levelNumber)")
-                            .font(.system(size: 18, weight: .bold, design: .rounded))
+                            .font(.system(.body, design: .rounded, weight: .bold))
                             .foregroundStyle(.white)
                         if isCompleted {
                             Image(systemName: "checkmark")
@@ -40,6 +40,10 @@ struct LevelTileView: View {
             }
         }
         .disabled(isLocked)
+        .accessibilityLabel(accessibilityLabelText)
+        .accessibilityHint(isLocked ? "Level is locked" : "Double tap to play level \(levelNumber)")
+        .accessibilityAddTraits(isLocked ? .isButton : [.isButton])
+        .accessibilityRemoveTraits(isLocked ? .isButton : [])
     }
 
     /// Determines tile background color based on its current state.
@@ -48,6 +52,17 @@ struct LevelTileView: View {
         case (true, _):  Color.gray.opacity(0.25)
         case (_, true):  Color(red: 0.16, green: 0.50, blue: 0.73).opacity(0.7)
         case (_, false): Color(red: 0.16, green: 0.50, blue: 0.73).opacity(0.45)
+        }
+    }
+
+    /// Descriptive accessibility label for VoiceOver.
+    private var accessibilityLabelText: String {
+        if isLocked {
+            return "Level \(levelNumber), locked"
+        } else if isCompleted {
+            return "Level \(levelNumber), completed"
+        } else {
+            return "Level \(levelNumber)"
         }
     }
 }

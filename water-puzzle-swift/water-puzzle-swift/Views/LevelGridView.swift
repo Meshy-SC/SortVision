@@ -16,9 +16,10 @@ struct LevelGridView: View {
 
             VStack(spacing: 16) {
                 Text("\(gameMode.displayName) Levels")
-                    .font(.system(size: 28, weight: .bold, design: .rounded))
+                    .font(.system(.title2, design: .rounded, weight: .bold))
                     .foregroundStyle(.white)
                     .padding(.top, 20)
+                    .accessibilityAddTraits(.isHeader)
 
                 ScrollView {
                     LazyVGrid(columns: columns, spacing: 12) {
@@ -39,6 +40,10 @@ struct LevelGridView: View {
                 }
             }
         }
+        .navigationTitle("\(gameMode.displayName) Levels")
+        #if os(iOS)
+        .toolbarVisibility(.hidden, for: .navigationBar)
+        #endif
     }
 }
 

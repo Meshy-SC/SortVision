@@ -9,6 +9,7 @@ struct LevelCompletionOverlay: View {
     let levelNumber: Int
     @Binding var path: NavigationPath
     @Environment(GameManager.self) private var gameManager
+    @AccessibilityFocusState private var isOverlayFocused: Bool
 
     /// Random congratulation messages matching the Unity ToastMessage pool.
     private let toastMessages = [
@@ -28,11 +29,12 @@ struct LevelCompletionOverlay: View {
             VStack(spacing: 24) {
                 // Toast message
                 Text(displayedMessage)
-                    .font(.system(size: 38, weight: .bold, design: .rounded))
+                    .font(.system(.title, design: .rounded, weight: .bold))
                     .foregroundStyle(.yellow)
+                    .accessibilityFocused($isOverlayFocused)
 
                 Text("Level \(levelNumber) Complete!")
-                    .font(.system(size: 22, weight: .medium, design: .rounded))
+                    .font(.system(.title3, design: .rounded, weight: .medium))
                     .foregroundStyle(.white)
 
                 VStack(spacing: 16) {
@@ -46,30 +48,40 @@ struct LevelCompletionOverlay: View {
                                 path.append(AppScreen.gameplay(gameMode, nextLevel))
                             }
                         }
-                        .font(.system(size: 20, weight: .bold, design: .rounded))
+                        .font(.system(.title3, design: .rounded, weight: .bold))
                         .buttonStyle(.borderedProminent)
                         .tint(.green)
                         .controlSize(.large)
                         .buttonBorderShape(.roundedRectangle(radius: 14))
+                        .accessibilityHint("Advances to level \(levelNumber + 1)")
+                        .keyboardShortcut(.defaultAction)
                     }
 
                     // Main Menu button — uses built-in borderedProminent style
                     Button("Main Menu") {
                         path.removeLast(path.count)
                     }
-                    .font(.system(size: 20, weight: .bold, design: .rounded))
+                    .font(.system(.title3, design: .rounded, weight: .bold))
                     .buttonStyle(.borderedProminent)
                     .tint(.gray)
                     .controlSize(.large)
                     .buttonBorderShape(.roundedRectangle(radius: 14))
+                    .accessibilityHint("Returns to the main menu")
+                    .keyboardShortcut(.cancelAction)
                 }
             }
             .padding(40)
             .background(.ultraThickMaterial, in: RoundedRectangle(cornerRadius: 24))
             .shadow(radius: 20)
+            .accessibilityElement(children: .contain)
+            .accessibilityAddTraits(.isModal)
         }
         .onAppear {
             displayedMessage = toastMessages.randomElement() ?? "Great!"
+            // Move VoiceOver focus to the overlay after a brief delay
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                isOverlayFocused = true
+            }
         }
     }
 }

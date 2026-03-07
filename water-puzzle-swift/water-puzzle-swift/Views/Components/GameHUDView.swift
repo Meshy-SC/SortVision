@@ -23,13 +23,17 @@ struct GameHUDView: View {
                 .buttonStyle(.bordered)
                 .buttonBorderShape(.circle)
                 .tint(.white)
+                .accessibilityLabel("Home")
+                .accessibilityHint("Returns to main menu")
+                .keyboardShortcut("h", modifiers: .command)
 
                 Spacer()
 
                 // Level indicator
                 Text("Level \(levelNumber)")
-                    .font(.system(size: 20, weight: .bold, design: .rounded))
+                    .font(.system(.title3, design: .rounded, weight: .bold))
                     .foregroundStyle(.white)
+                    .accessibilityAddTraits(.isHeader)
 
                 Spacer()
 
@@ -40,6 +44,9 @@ struct GameHUDView: View {
                 .buttonStyle(.bordered)
                 .buttonBorderShape(.circle)
                 .tint(.white)
+                .accessibilityLabel("Restart level")
+                .accessibilityHint("Resets the current puzzle")
+                .keyboardShortcut("r", modifiers: .command)
             }
             .padding(.horizontal, 20)
             .padding(.top, 12)
