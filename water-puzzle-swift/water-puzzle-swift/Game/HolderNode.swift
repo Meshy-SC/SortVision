@@ -236,7 +236,7 @@ final class HolderNode: SKNode {
     /// 3. Animate liquid transfer with stream line (~0.5s)
     /// 4. Return to near-target position (~0.4s)
     /// 5. Return to original position (~0.25s)
-    func pourLiquid(to target: HolderNode, in scene: SKScene, completion: @escaping @Sendable () -> Void) {
+    func pourLiquid(to target: HolderNode, in scene: SKScene, completion: @escaping () -> Void) {
         // Validate transfer — mirrors Unity guard conditions
         guard let sourceLiquid = topLiquid,
               !target.isFull,

@@ -19,12 +19,12 @@ final class GameScene: SKScene {
     // MARK: - Callbacks (bridge to SwiftUI)
 
     /// Called when the level is completed (triggers UI overlay).
-    var onLevelComplete: (() -> Void)?
+    var onLevelComplete: (@MainActor () -> Void)?
 
     /// Called to persist level completion progress.
     /// Decouples the SpriteKit layer from `GameManager` — the SwiftUI host
     /// provides this closure to bridge back to the data layer.
-    var onSaveProgress: ((GameMode, Int) -> Void)?
+    var onSaveProgress: (@MainActor (GameMode, Int) -> Void)?
 
     // MARK: - Game State
 
@@ -153,11 +153,9 @@ final class GameScene: SKScene {
                 // Valid transfer — start pour animation
                 isTransferring = true
                 pending.pourLiquid(to: holder, in: self) { [weak self] in
-                    MainActor.assumeIsolated {
-                        guard let self else { return }
-                        self.isTransferring = false
-                        self.checkWinCondition()
-                    }
+                    guard let self else { return }
+                    self.isTransferring = false
+                    self.checkWinCondition()
                 }
             } else {
                 // Invalid transfer — switch pending to tapped holder

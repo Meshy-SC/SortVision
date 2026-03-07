@@ -7,7 +7,7 @@ import SwiftUI
 /// MainMenu → DifficultySelect → LevelGrid → Gameplay
 /// ```
 ///
-/// Used with `NavigationStack(path:)` in `ContentView` for
+/// Used with `NavigationStack(path:)` in `RootNavigationView` for
 /// declarative, type-safe navigation throughout the app.
 enum AppScreen: Hashable, Sendable {
     /// Difficulty selection screen (Easy, Normal, Hard, Expert).
