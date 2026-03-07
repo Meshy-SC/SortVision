@@ -91,22 +91,22 @@ final class GameManager {
     /// - Returns: Array of decoded `Level` objects.
     /// - Throws: `LevelLoadingError` if the resource is missing or malformed.
     private func loadLevels(for mode: GameMode) throws -> [Level] {
-        guard let url = Bundle.main.url(forResource: mode.jsonFileName, withExtension: "json") else {
-            throw LevelLoadingError.resourceNotFound(mode.jsonFileName)
+        guard let url = Bundle.main.url(forResource: mode.levelResourceName, withExtension: "json") else {
+            throw LevelLoadingError.resourceNotFound(mode.levelResourceName)
         }
 
         let data: Data
         do {
             data = try Data(contentsOf: url)
         } catch {
-            throw LevelLoadingError.fileReadFailed(mode.jsonFileName, error.localizedDescription)
+            throw LevelLoadingError.fileReadFailed(mode.levelResourceName, error.localizedDescription)
         }
 
         do {
             let group = try JSONDecoder().decode(LevelGroup.self, from: data)
             return group.levels
         } catch {
-            throw LevelLoadingError.decodingFailed(mode.jsonFileName, error.localizedDescription)
+            throw LevelLoadingError.decodingFailed(mode.levelResourceName, error.localizedDescription)
         }
     }
 

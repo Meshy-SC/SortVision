@@ -25,10 +25,10 @@ struct LevelGridView: View {
                         let levels = gameManager.levels(for: gameMode)
                         ForEach(levels) { level in
                             LevelTileView(
-                                levelNumber: level.no,
+                                levelNumber: level.number,
                                 isLocked: gameManager.isLevelLocked(
-                                    mode: gameMode, number: level.no),
-                                isCompleted: level.no <= gameManager.completedLevel(for: gameMode)
+                                    mode: gameMode, number: level.number),
+                                isCompleted: level.number <= gameManager.completedLevel(for: gameMode)
                             ) {
                                 path.append(AppScreen.gameplay(gameMode, level))
                             }

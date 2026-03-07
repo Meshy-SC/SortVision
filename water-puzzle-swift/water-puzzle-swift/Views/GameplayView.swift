@@ -25,7 +25,7 @@ struct GameplayView: View {
 
             // HUD overlay — extracted to GameHUDView for single responsibility
             GameHUDView(
-                levelNumber: level.no,
+                levelNumber: level.number,
                 onHome: {
                     path.removeLast(path.count)
                 },
@@ -37,9 +37,9 @@ struct GameplayView: View {
 
             // Level complete overlay
             if showLevelComplete {
-                LevelCompleteView(
+                LevelCompletionOverlay(
                     gameMode: gameMode,
-                    levelNumber: level.no,
+                    levelNumber: level.number,
                     path: $path
                 )
                 .transition(.opacity.combined(with: .scale(scale: 0.9)))

@@ -8,10 +8,10 @@
 import SwiftUI
 
 @main
-struct water_puzzle_swiftApp: App {
+struct WaterPuzzleApp: App {
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            RootNavigationView()
         }
     }
 }

@@ -18,7 +18,7 @@ final class HolderNode: SKNode {
     static let cornerRadius: CGFloat = innerWidth / 2.0
     static let pendingOffset: CGFloat = 25.0
     static let pourAngleDegrees: CGFloat = 82.0
-    static let pourAngle: CGFloat = pourAngleDegrees * .pi / 180.0
+    static let pourAngleInRadians: CGFloat = pourAngleDegrees * .pi / 180.0
 
     // MARK: - Child Nodes
 
@@ -28,23 +28,34 @@ final class HolderNode: SKNode {
 
     // MARK: - State
 
+    /// The liquid segments currently contained in this tube, ordered bottom to top.
     private(set) var liquids: [LiquidNode] = []
+
+    /// Whether this tube is in the raised "selected" state, awaiting a pour target.
     private(set) var isPending: Bool = false
-    private(set) var originalPoint: CGPoint = .zero
-    private var pendingPoint: CGPoint = .zero
+
+    /// The tube's resting position in the scene before any lift or pour animation.
+    private(set) var restPosition: CGPoint = .zero
+
+    /// The tube's raised position when in the "selected" pending state.
+    private var liftedPosition: CGPoint = .zero
 
     // MARK: - Computed Properties
 
+    /// Whether the tube has reached its maximum capacity of 4 liquid units.
     var isFull: Bool {
-        Int(currentTotal.rounded()) >= Self.maxValue
+        Int(totalLiquidValue.rounded()) >= Self.maxValue
     }
 
+    /// The topmost liquid segment in this tube, or `nil` if the tube is empty.
     var topLiquid: LiquidNode? { liquids.last }
 
-    var currentTotal: CGFloat {
+    /// The sum of all liquid segment values currently in this tube.
+    var totalLiquidValue: CGFloat {
         liquids.reduce(CGFloat(0)) { $0 + $1.value }
     }
 
+    /// Whether this tube contains no liquid segments.
     var isEmpty: Bool { liquids.isEmpty }
 
     // MARK: - Init
@@ -145,14 +156,14 @@ final class HolderNode: SKNode {
 
     // MARK: - Initialization
 
-    /// Populate the tube with liquid data from the level definition.
+    /// Populate the tube with liquid segments from the level definition.
     /// Mirrors Unity Holder.Init(IEnumerable<LiquidData>).
-    func initialize(with liquidDatas: [LiquidData]) {
-        for (index, data) in liquidDatas.enumerated() {
+    func populate(with segments: [LiquidSegment]) {
+        for (index, data) in segments.enumerated() {
             addLiquid(groupId: data.groupId, value: data.value, isFirst: index == 0)
         }
-        originalPoint = position
-        pendingPoint = CGPoint(x: position.x, y: position.y + Self.pendingOffset)
+        restPosition = position
+        liftedPosition = CGPoint(x: position.x, y: position.y + Self.pendingOffset)
     }
 
     // MARK: - Liquid Management
@@ -163,17 +174,17 @@ final class HolderNode: SKNode {
         let liquid = LiquidNode(groupId: groupId, value: value)
         liquid.isBottomLiquid = liquids.isEmpty || isFirst
 
-        let yPos = getTopPoint()
+        let yPos = topStackHeight
         liquid.position = CGPoint(x: 0, y: yPos)
 
         liquids.append(liquid)
         contentNode.addChild(liquid)
     }
 
-    /// Returns the Y coordinate of the top of the liquid stack.
+    /// The Y coordinate at the top of the liquid stack.
     /// Mirrors Unity Holder.GetTopPoint().
-    func getTopPoint() -> CGFloat {
-        liquids.reduce(CGFloat(0)) { $0 + $1.size }
+    var topStackHeight: CGFloat {
+        liquids.reduce(CGFloat(0)) { $0 + $1.visualHeight }
     }
 
     /// Recalculate positions of all liquid segments in the stack.
@@ -182,7 +193,7 @@ final class HolderNode: SKNode {
         for (index, liquid) in liquids.enumerated() {
             liquid.isBottomLiquid = (index == 0)
             liquid.position = CGPoint(x: 0, y: y)
-            y += liquid.size
+            y += liquid.visualHeight
         }
     }
 
@@ -195,7 +206,7 @@ final class HolderNode: SKNode {
         zPosition = 100
 
         removeAllActions()
-        let moveAction = SKAction.move(to: pendingPoint, duration: 0.15)
+        let moveAction = SKAction.move(to: liftedPosition, duration: 0.15)
         moveAction.timingMode = .easeOut
         run(moveAction)
 
@@ -208,7 +219,7 @@ final class HolderNode: SKNode {
         isPending = false
 
         removeAllActions()
-        let moveAction = SKAction.move(to: originalPoint, duration: 0.15)
+        let moveAction = SKAction.move(to: restPosition, duration: 0.15)
         moveAction.timingMode = .easeOut
         run(moveAction) { [weak self] in
             self?.zPosition = 0
@@ -240,11 +251,11 @@ final class HolderNode: SKNode {
         removeAllActions()
 
         let isRightSide = target.position.x > self.position.x
-        let signedAngle = isRightSide ? -Self.pourAngle : Self.pourAngle
+        let signedAngle = isRightSide ? -Self.pourAngleInRadians : Self.pourAngleInRadians
 
-        // Use originalPoint (not self.position) so the tube returns to its
+        // Use restPosition (not self.position) so the tube returns to its
         // non-elevated position after pouring, not the pending-lifted position.
-        let sourceStartPos = originalPoint
+        let sourceStartPos = restPosition
 
         // Side delivery point (top-left or top-right of tube in local coords)
         // Mirrors Unity Holder._leftSideDeliverPoint / _rightSideDeliverPoint
@@ -283,7 +294,7 @@ final class HolderNode: SKNode {
 
         // Calculate transfer values
         let sourceStartValue = sourceLiquid.value
-        let transferValue = min(sourceLiquid.value, CGFloat(Self.maxValue) - target.currentTotal)
+        let transferValue = min(sourceLiquid.value, CGFloat(Self.maxValue) - target.totalLiquidValue)
         let sourceColor = sourceLiquid.liquidColor
 
         // Mutable state shared across animation phases
@@ -328,13 +339,13 @@ final class HolderNode: SKNode {
             targetStartValue = targetLiquid?.value ?? 0
 
             // Create liquid stream line — mirrors Unity _liquidLine setup
-            let lineHeight = deliverTopPos.y - target.position.y - target.getTopPoint()
+            let lineHeight = deliverTopPos.y - target.position.y - target.topStackHeight
             let line = SKShapeNode(rectOf: CGSize(width: 6, height: max(lineHeight, 20)))
             line.fillColor = sourceColor
             line.strokeColor = .clear
             line.position = CGPoint(
                 x: deliverTopPos.x,
-                y: target.position.y + target.getTopPoint() + max(lineHeight, 20) / 2
+                y: target.position.y + target.topStackHeight + max(lineHeight, 20) / 2
             )
             line.zPosition = 50
             scene.addChild(line)

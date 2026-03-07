@@ -2,7 +2,7 @@ import SwiftUI
 
 /// Difficulty selection screen. Mirrors Unity's GameModePanel with Easy/Normal/Hard buttons.
 /// Adds Expert for the fourth level file.
-struct DifficultySelectView: View {
+struct DifficultySelectionView: View {
     @Environment(GameManager.self) private var gameManager
     @Binding var path: NavigationPath
 

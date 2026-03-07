@@ -10,7 +10,10 @@ final class GameScene: SKScene {
 
     // MARK: - Level Configuration
 
+    /// The level data defining the initial tube configuration for this scene.
     var level: Level?
+
+    /// The difficulty mode for the current level, used for progress tracking on completion.
     var gameMode: GameMode = .easy
 
     // MARK: - Callbacks (bridge to SwiftUI)
@@ -27,14 +30,14 @@ final class GameScene: SKScene {
 
     private var holders: [HolderNode] = []
     private var isTransferring = false
-    private var gameState: GameState = .none
+    private var gameState: GameState = .idle
 
     /// Horizontal distance between tube centers.
     /// Mirrors Unity LevelManager._minXDistanceBetweenHolders.
     private let holderSpacing: CGFloat = 80
 
     enum GameState {
-        case none, playing, over
+        case idle, playing, over
     }
 
     // MARK: - Scene Lifecycle
@@ -52,15 +55,15 @@ final class GameScene: SKScene {
     private func loadLevel() {
         guard let level else { return }
 
-        let holderCount = level.map.count
+        let holderCount = level.columns.count
         let positions = positionsForHolders(count: holderCount)
-        let liquidDataMap = level.liquidDataMap
+        let liquidSegments = level.compressedLiquidSegments
 
         for i in 0..<holderCount {
             let holder = HolderNode()
             holder.position = positions[i]
             addChild(holder)
-            holder.initialize(with: liquidDataMap[i])
+            holder.populate(with: liquidSegments[i])
             holders.append(holder)
         }
     }
@@ -113,7 +116,7 @@ final class GameScene: SKScene {
     private func handleTap(at point: CGPoint) {
         guard gameState == .playing, !isTransferring else { return }
 
-        guard let holder = holderAt(point: point) else {
+        guard let holder = holder(at: point) else {
             // Tapped empty space — clear any pending holder
             if let pending = holders.first(where: { $0.isPending }) {
                 pending.clearPending()
@@ -121,12 +124,12 @@ final class GameScene: SKScene {
             return
         }
 
-        onClickHolder(holder)
+        handleHolderSelection(holder)
     }
 
     /// Find the holder at the given scene coordinate using bounding rect hit test.
     /// Replaces Unity's Physics2D.OverlapPoint approach.
-    private func holderAt(point: CGPoint) -> HolderNode? {
+    private func holder(at point: CGPoint) -> HolderNode? {
         let hitPadding: CGFloat = 12
         return holders.first { holder in
             CGRect(
@@ -139,7 +142,7 @@ final class GameScene: SKScene {
     }
 
     /// Core interaction logic. Faithfully mirrors Unity LevelManager.OnClickHolder(Holder).
-    private func onClickHolder(_ holder: HolderNode) {
+    private func handleHolderSelection(_ holder: HolderNode) {
         let pendingHolder = holders.first(where: { $0.isPending })
 
         if let pending = pendingHolder, pending !== holder {
@@ -200,7 +203,7 @@ final class GameScene: SKScene {
 
         // Save progress via callback (decoupled from GameManager)
         if let level {
-            onSaveProgress?(gameMode, level.no)
+            onSaveProgress?(gameMode, level.number)
         }
 
         // Show confetti effect

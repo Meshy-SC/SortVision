@@ -20,7 +20,7 @@ enum GameMode: Int, CaseIterable, Codable, Sendable, Identifiable {
     }
 
     /// JSON resource filename (without extension).
-    var jsonFileName: String {
+    var levelResourceName: String {
         switch self {
         case .easy: "levels"
         case .normal: "levels-normal"

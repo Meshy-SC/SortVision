@@ -4,7 +4,7 @@ import SwiftUI
 /// - Random toast message ("Great!", "Awesome!", etc.)
 /// - Continue button → loads next level
 /// - Main Menu button → returns to root
-struct LevelCompleteView: View {
+struct LevelCompletionOverlay: View {
     let gameMode: GameMode
     let levelNumber: Int
     @Binding var path: NavigationPath

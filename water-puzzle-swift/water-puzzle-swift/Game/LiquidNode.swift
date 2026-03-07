@@ -18,13 +18,18 @@ final class LiquidNode: SKNode {
 
     // MARK: - Properties
 
+    /// Color group index into `ColorPalette.colors` (0–10), identifying this segment's color.
     private(set) var groupId: Int
 
+    /// Whether this is the bottommost segment in its tube.
+    /// When `true` and `value > 0.9`, renders a rounded bottom cap for visual polish.
     var isBottomLiquid: Bool = false {
         didSet { updateVisual() }
     }
 
     private var _value: CGFloat = 0
+
+    /// The number of liquid units this segment occupies. Controls visual height via `unitSize`.
     var value: CGFloat {
         get { _value }
         set {
@@ -33,12 +38,13 @@ final class LiquidNode: SKNode {
         }
     }
 
+    /// The resolved `SKColor` for this segment's `groupId` from the shared color palette.
     var liquidColor: SKColor {
         ColorPalette.color(for: groupId)
     }
 
-    /// Visual height in points = value * unitSize.
-    var size: CGFloat {
+    /// The visual height of this segment in points, computed as `value × unitSize`.
+    var visualHeight: CGFloat {
         _value * Self.unitSize
     }
 

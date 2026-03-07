@@ -31,35 +31,41 @@ struct LevelGroup: Codable, Sendable {
 /// Required for `NavigationPath` routing. Auto-synthesized from `no` and `map`.
 struct Level: Codable, Sendable, Identifiable, Hashable {
     /// 1-based level number, unique within its game mode.
-    let no: Int
+    let number: Int
 
     /// Array of tube columns defining the initial puzzle state.
-    let map: [LevelColumn]
+    let columns: [LevelColumn]
 
-    var id: Int { no }
+    var id: Int { number }
 
-    /// Converts the raw level map into grouped liquid data,
-    /// compressing consecutive same-color values into single `LiquidData` entries.
+    /// Maps JSON keys to property names, preserving serialization compatibility.
+    private enum CodingKeys: String, CodingKey {
+        case number = "no"
+        case columns = "map"
+    }
+
+    /// Converts the raw level columns into grouped liquid segments,
+    /// compressing consecutive same-color values into single `LiquidSegment` entries.
     ///
     /// For example, `[1, 1, 2]` becomes:
     /// ```
-    /// [LiquidData(groupId: 1, value: 2), LiquidData(groupId: 2, value: 1)]
+    /// [LiquidSegment(groupId: 1, value: 2), LiquidSegment(groupId: 2, value: 1)]
     /// ```
     ///
     /// Faithfully mirrors Unity `Level.GetLiquidDatas(LevelColumn)`.
-    var liquidDataMap: [[LiquidData]] {
-        map.map { Self.getLiquidDatas(from: $0) }
+    var compressedLiquidSegments: [[LiquidSegment]] {
+        columns.map { Self.liquidSegments(from: $0) }
     }
 
-    /// Compresses a column's raw color values into grouped `LiquidData` entries.
+    /// Compresses a column's raw color values into grouped `LiquidSegment` entries.
     ///
     /// Consecutive values with the same groupId are merged into a single entry
     /// whose `value` equals the count of consecutive occurrences.
-    static func getLiquidDatas(from column: LevelColumn) -> [LiquidData] {
+    static func liquidSegments(from column: LevelColumn) -> [LiquidSegment] {
         let values = column.values
         guard !values.isEmpty else { return [] }
 
-        var result: [LiquidData] = []
+        var result: [LiquidSegment] = []
         var i = 0
         while i < values.count {
             let currentGroup = values[i]
@@ -68,7 +74,7 @@ struct Level: Codable, Sendable, Identifiable, Hashable {
                 count += 1
                 i += 1
             }
-            result.append(LiquidData(groupId: currentGroup, value: CGFloat(count)))
+            result.append(LiquidSegment(groupId: currentGroup, value: CGFloat(count)))
         }
         return result
     }
@@ -89,8 +95,8 @@ struct LevelColumn: Codable, Sendable, Hashable {
 /// A single liquid segment with a color group and volume.
 ///
 /// Produced by compressing consecutive same-color values in a `LevelColumn`.
-/// Used by `HolderNode.initialize(with:)` to populate tubes at level start.
-struct LiquidData: Sendable, Equatable, Hashable {
+/// Used by `HolderNode.populate(with:)` to fill tubes at level start.
+struct LiquidSegment: Sendable, Equatable, Hashable {
     /// Index into `ColorPalette.colors` (0–10).
     let groupId: Int
 
