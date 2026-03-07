@@ -36,8 +36,7 @@ final class HolderNode: SKNode {
     // MARK: - Computed Properties
 
     var isFull: Bool {
-        let total = liquids.reduce(CGFloat(0)) { $0 + $1.value }
-        return Int(total.rounded()) >= Self.maxValue
+        Int(currentTotal.rounded()) >= Self.maxValue
     }
 
     var topLiquid: LiquidNode? { liquids.last }

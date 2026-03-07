@@ -79,9 +79,7 @@ final class SoundManager {
     ///   - sound: The sound effect to play.
     ///   - node: The `SKNode` on which to run the sound action.
     func play(_ sound: GameSound, on node: SKNode) {
-        guard soundEnabled else { return }
-        if let action = cachedActions[sound] {
-            node.run(action)
-        }
+        guard soundEnabled, let action = cachedActions[sound] else { return }
+        node.run(action)
     }
 }

@@ -30,9 +30,7 @@ struct LevelGridView: View {
                                     mode: gameMode, number: level.no),
                                 isCompleted: level.no <= gameManager.completedLevel(for: gameMode)
                             ) {
-                                if !gameManager.isLevelLocked(mode: gameMode, number: level.no) {
-                                    path.append(AppScreen.gameplay(gameMode, level))
-                                }
+                                path.append(AppScreen.gameplay(gameMode, level))
                             }
                         }
                     }

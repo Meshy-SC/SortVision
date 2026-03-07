@@ -44,12 +44,10 @@ struct LevelTileView: View {
 
     /// Determines tile background color based on its current state.
     private var tileColor: Color {
-        if isLocked {
-            Color.gray.opacity(0.25)
-        } else if isCompleted {
-            Color(red: 0.16, green: 0.50, blue: 0.73).opacity(0.7)
-        } else {
-            Color(red: 0.16, green: 0.50, blue: 0.73).opacity(0.45)
+        switch (isLocked, isCompleted) {
+        case (true, _):  Color.gray.opacity(0.25)
+        case (_, true):  Color(red: 0.16, green: 0.50, blue: 0.73).opacity(0.7)
+        case (_, false): Color(red: 0.16, green: 0.50, blue: 0.73).opacity(0.45)
         }
     }
 }

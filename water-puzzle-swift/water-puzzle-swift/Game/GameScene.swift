@@ -10,7 +10,7 @@ final class GameScene: SKScene {
 
     // MARK: - Level Configuration
 
-    var level: Level!
+    var level: Level?
     var gameMode: GameMode = .easy
 
     // MARK: - Callbacks (bridge to SwiftUI)
@@ -90,23 +90,21 @@ final class GameScene: SKScene {
         let topY = centerY + rowSpacing / 2
         let bottomY = centerY - rowSpacing / 2
 
-        var positions: [CGPoint] = []
-
         // Top row
         let topTotalWidth = CGFloat(topRowCount - 1) * holderSpacing
         let topStartX = centerX - topTotalWidth / 2
-        for i in 0..<topRowCount {
-            positions.append(CGPoint(x: topStartX + CGFloat(i) * holderSpacing, y: topY))
+        let topPositions = (0..<topRowCount).map { i in
+            CGPoint(x: topStartX + CGFloat(i) * holderSpacing, y: topY)
         }
 
         // Bottom row
         let bottomTotalWidth = CGFloat(bottomRowCount - 1) * holderSpacing
         let bottomStartX = centerX - bottomTotalWidth / 2
-        for i in 0..<bottomRowCount {
-            positions.append(CGPoint(x: bottomStartX + CGFloat(i) * holderSpacing, y: bottomY))
+        let bottomPositions = (0..<bottomRowCount).map { i in
+            CGPoint(x: bottomStartX + CGFloat(i) * holderSpacing, y: bottomY)
         }
 
-        return positions
+        return topPositions + bottomPositions
     }
 
     // MARK: - Input Handling
@@ -130,18 +128,14 @@ final class GameScene: SKScene {
     /// Replaces Unity's Physics2D.OverlapPoint approach.
     private func holderAt(point: CGPoint) -> HolderNode? {
         let hitPadding: CGFloat = 12
-        for holder in holders {
-            let holderFrame = CGRect(
+        return holders.first { holder in
+            CGRect(
                 x: holder.position.x - HolderNode.outerWidth / 2 - hitPadding,
                 y: holder.position.y - hitPadding,
                 width: HolderNode.outerWidth + hitPadding * 2,
                 height: HolderNode.innerHeight + HolderNode.pendingOffset + hitPadding * 2
-            )
-            if holderFrame.contains(point) {
-                return holder
-            }
+            ).contains(point)
         }
-        return nil
     }
 
     /// Core interaction logic. Faithfully mirrors Unity LevelManager.OnClickHolder(Holder).
@@ -190,15 +184,8 @@ final class GameScene: SKScene {
         guard allSimple else { return }
 
         // Each color must appear in exactly one holder
-        let filledHolders = holders.filter { !$0.isEmpty }
-        var seenGroups = Set<Int>()
-        for holder in filledHolders {
-            guard let liquid = holder.liquids.first else { continue }
-            if seenGroups.contains(liquid.groupId) {
-                return // Same color in multiple holders — not won yet
-            }
-            seenGroups.insert(liquid.groupId)
-        }
+        let groupIds = holders.compactMap(\.liquids.first?.groupId)
+        guard groupIds.count == Set(groupIds).count else { return }
 
         // Puzzle solved!
         gameOver()
