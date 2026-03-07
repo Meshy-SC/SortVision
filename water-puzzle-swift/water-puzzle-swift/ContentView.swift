@@ -3,7 +3,6 @@ import SwiftUI
 /// Navigation route identifiers for the app flow:
 /// MainMenu → DifficultySelect → LevelGrid → Gameplay
 enum AppScreen: Hashable {
-    case mainMenu
     case difficultySelect
     case levelGrid(GameMode)
     case gameplay(GameMode, Level)
@@ -32,8 +31,6 @@ struct ContentView: View {
             MainMenuView(path: $path)
                 .navigationDestination(for: AppScreen.self) { screen in
                     switch screen {
-                    case .mainMenu:
-                        MainMenuView(path: $path)
                     case .difficultySelect:
                         DifficultySelectView(path: $path)
                     case .levelGrid(let mode):

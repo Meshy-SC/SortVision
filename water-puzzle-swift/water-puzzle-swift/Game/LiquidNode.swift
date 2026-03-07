@@ -13,7 +13,7 @@ final class LiquidNode: SKNode {
 
     // MARK: - Child Nodes
 
-    let mainSprite: SKSpriteNode
+    private let mainSprite: SKSpriteNode
     private let bottomCap: SKShapeNode
 
     // MARK: - Properties

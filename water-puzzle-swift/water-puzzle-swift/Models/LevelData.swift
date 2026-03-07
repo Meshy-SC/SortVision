@@ -1,5 +1,4 @@
 import Foundation
-import CoreGraphics
 
 struct LevelGroup: Codable, Sendable {
     let levels: [Level]

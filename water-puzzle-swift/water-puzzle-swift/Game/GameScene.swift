@@ -150,9 +150,11 @@ final class GameScene: SKScene {
                 // Valid transfer — start pour animation
                 isTransferring = true
                 pending.pourLiquid(to: holder, in: self) { [weak self] in
-                    guard let self else { return }
-                    self.isTransferring = false
-                    self.checkWinCondition()
+                    MainActor.assumeIsolated {
+                        guard let self else { return }
+                        self.isTransferring = false
+                        self.checkWinCondition()
+                    }
                 }
             } else {
                 // Invalid transfer — switch pending to tapped holder

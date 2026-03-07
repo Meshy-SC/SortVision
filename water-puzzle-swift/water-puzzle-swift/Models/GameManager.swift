@@ -1,4 +1,4 @@
-import SwiftUI
+import Foundation
 import Observation
 
 /// Central game state manager. Mirrors Unity's ResourceManager + GameManager:

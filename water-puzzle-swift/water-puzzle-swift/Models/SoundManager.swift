@@ -5,13 +5,12 @@ enum GameSound: String, Sendable {
     case pop = "pop_sound_effect"     // Tube lift (pending)
     case push = "push_sound_effect"   // Tube put down
     case water = "water"              // Water pouring
-    case correct = "Correct"          // Correct action
     case win = "Epic"                 // Level complete fanfare
 
     var fileExtension: String {
         switch self {
         case .pop, .push: return "mp3"
-        case .water, .correct, .win: return "wav"
+        case .water, .win: return "wav"
         }
     }
 
@@ -28,7 +27,7 @@ final class SoundManager {
 
     private init() {
         // Pre-load all sound actions for low-latency playback
-        for sound in [GameSound.pop, .push, .water, .correct, .win] {
+        for sound in [GameSound.pop, .push, .water, .win] {
             cachedActions[sound] = SKAction.playSoundFileNamed(
                 sound.fileName, waitForCompletion: false
             )

@@ -31,7 +31,7 @@ final class HolderNode: SKNode {
     private(set) var liquids: [LiquidNode] = []
     private(set) var isPending: Bool = false
     private(set) var originalPoint: CGPoint = .zero
-    var pendingPoint: CGPoint = .zero
+    private var pendingPoint: CGPoint = .zero
 
     // MARK: - Computed Properties
 
