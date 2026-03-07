@@ -7,15 +7,9 @@ struct MainMenuView: View {
 
     var body: some View {
         ZStack {
-            // Background gradient matching the dark theme
-            LinearGradient(
-                colors: [
-                    Color(red: 0.10, green: 0.13, blue: 0.20),
-                    Color(red: 0.16, green: 0.20, blue: 0.30),
-                ],
-                startPoint: .top, endPoint: .bottom
-            )
-            .ignoresSafeArea()
+            // Background applied via reusable modifier
+            Color.clear
+                .gameBackground()
 
             VStack(spacing: 32) {
                 Spacer()

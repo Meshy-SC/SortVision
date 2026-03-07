@@ -15,7 +15,13 @@ final class GameScene: SKScene {
 
     // MARK: - Callbacks (bridge to SwiftUI)
 
+    /// Called when the level is completed (triggers UI overlay).
     var onLevelComplete: (() -> Void)?
+
+    /// Called to persist level completion progress.
+    /// Decouples the SpriteKit layer from `GameManager` — the SwiftUI host
+    /// provides this closure to bridge back to the data layer.
+    var onSaveProgress: ((GameMode, Int) -> Void)?
 
     // MARK: - Game State
 
@@ -205,9 +211,9 @@ final class GameScene: SKScene {
 
         SoundManager.shared.play(.win, on: self)
 
-        // Save progress
+        // Save progress via callback (decoupled from GameManager)
         if let level {
-            GameManager.shared.completeLevel(mode: gameMode, number: level.no)
+            onSaveProgress?(gameMode, level.no)
         }
 
         // Show confetti effect

@@ -23,44 +23,17 @@ struct GameplayView: View {
                     .ignoresSafeArea()
             }
 
-            // HUD overlay — mirrors Unity Game/UIManager buttons
-            VStack {
-                HStack(spacing: 16) {
-                    // Menu/Home button — uses built-in bordered circular button
-                    Button {
-                        path.removeLast(path.count)
-                    } label: {
-                        Image(systemName: "house.fill")
-                    }
-                    .buttonStyle(.bordered)
-                    .buttonBorderShape(.circle)
-                    .tint(.white)
-
-                    Spacer()
-
-                    // Level number text — mirrors Unity UIManager level text
-                    Text("Level \(level.no)")
-                        .font(.system(size: 20, weight: .bold, design: .rounded))
-                        .foregroundStyle(.white)
-
-                    Spacer()
-
-                    // Restart button — uses built-in bordered circular button
-                    Button {
-                        showLevelComplete = false
-                        scene?.restart()
-                    } label: {
-                        Image(systemName: "arrow.counterclockwise")
-                    }
-                    .buttonStyle(.bordered)
-                    .buttonBorderShape(.circle)
-                    .tint(.white)
+            // HUD overlay — extracted to GameHUDView for single responsibility
+            GameHUDView(
+                levelNumber: level.no,
+                onHome: {
+                    path.removeLast(path.count)
+                },
+                onRestart: {
+                    showLevelComplete = false
+                    scene?.restart()
                 }
-                .padding(.horizontal, 20)
-                .padding(.top, 12)
-
-                Spacer()
-            }
+            )
 
             // Level complete overlay
             if showLevelComplete {
@@ -86,9 +59,15 @@ struct GameplayView: View {
         gameScene.scaleMode = .aspectFill
         gameScene.level = level
         gameScene.gameMode = gameMode
+
+        // Bridge SpriteKit callbacks to SwiftUI layer
         gameScene.onLevelComplete = {
             showLevelComplete = true
         }
+        gameScene.onSaveProgress = { mode, number in
+            gameManager.completeLevel(mode: mode, number: number)
+        }
+
         scene = gameScene
     }
 }

@@ -15,14 +15,8 @@ struct DifficultySelectView: View {
 
     var body: some View {
         ZStack {
-            LinearGradient(
-                colors: [
-                    Color(red: 0.10, green: 0.13, blue: 0.20),
-                    Color(red: 0.16, green: 0.20, blue: 0.30),
-                ],
-                startPoint: .top, endPoint: .bottom
-            )
-            .ignoresSafeArea()
+            Color.clear
+                .gameBackground()
 
             VStack(spacing: 24) {
                 Text("Select Difficulty")
