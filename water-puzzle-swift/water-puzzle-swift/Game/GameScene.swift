@@ -47,7 +47,9 @@ final class GameScene: SKScene {
 
     override func didMove(to view: SKView) {
         backgroundColor = SKColor(red: 0.12, green: 0.15, blue: 0.22, alpha: 1.0)
+        isAccessibilityElement = false
         loadLevel()
+        updateAccessibility()
         gameState = .playing
     }
 
@@ -158,6 +160,7 @@ final class GameScene: SKScene {
                 pending.pourLiquid(to: holder, in: self) { [weak self] in
                     guard let self else { return }
                     self.isTransferring = false
+                    self.updateAccessibility()
                     self.checkWinCondition()
                 }
             } else {
@@ -166,6 +169,7 @@ final class GameScene: SKScene {
                 if !holder.isEmpty {
                     holder.startPending()
                 }
+                updateAccessibility()
             }
         } else if !holder.isEmpty {
             // No pending holder, or tapped the same pending holder — toggle
@@ -174,6 +178,7 @@ final class GameScene: SKScene {
             } else {
                 holder.startPending()
             }
+            updateAccessibility()
         }
     }
 
@@ -269,6 +274,7 @@ final class GameScene: SKScene {
         children.filter { $0.zPosition >= 50 }.forEach { $0.removeFromParent() }
 
         loadLevel()
+        updateAccessibility()
     }
 
     // MARK: - Platform Input
@@ -285,4 +291,67 @@ final class GameScene: SKScene {
         handleTap(at: point)
     }
     #endif
+
+    // MARK: - Accessibility
+
+    #if os(iOS) || os(visionOS)
+    /// Provides VoiceOver accessibility elements for each tube in the game.
+    ///
+    /// Each holder is represented as an accessibility element with a label
+    /// describing its contents (colors from bottom to top) and its state.
+    override var accessibilityElements: [Any]? {
+        get {
+            holders.enumerated().map { index, holder in
+                let element = UIAccessibilityElement(accessibilityContainer: self)
+                let tubeNumber = index + 1
+
+                // Build description of tube contents
+                let description: String
+                if holder.isEmpty {
+                    description = "Tube \(tubeNumber), empty"
+                } else if holder.isPending {
+                    description = "Tube \(tubeNumber), selected, \(holder.accessibilityContentDescription)"
+                } else {
+                    description = "Tube \(tubeNumber), \(holder.accessibilityContentDescription)"
+                }
+
+                element.accessibilityLabel = description
+                element.accessibilityHint = holder.isEmpty && !holders.contains(where: { $0.isPending })
+                    ? "Empty tube, select a tube with liquid first"
+                    : "Double tap to select or pour"
+                element.accessibilityTraits = .button
+
+                // Convert holder position to screen coordinates for the accessibility frame
+                if let view = self.view {
+                    let scenePoint = holder.position
+                    let viewPoint = convertPoint(toView: scenePoint)
+                    let screenPoint = view.convert(viewPoint, to: nil)
+                    let frameSize = CGSize(width: 60, height: 200)
+                    element.accessibilityFrame = CGRect(
+                        x: screenPoint.x - frameSize.width / 2,
+                        y: screenPoint.y - frameSize.height / 2,
+                        width: frameSize.width,
+                        height: frameSize.height
+                    )
+                }
+
+                // Custom action to tap the holder
+                element.accessibilityActivationPoint = self.view.map {
+                    let viewPoint = convertPoint(toView: holder.position)
+                    return $0.convert(viewPoint, to: nil)
+                } ?? .zero
+
+                return element
+            }
+        }
+        set { /* Required by protocol */ }
+    }
+    #endif
+
+    /// Updates VoiceOver after game state changes (pour, restart, etc.).
+    private func updateAccessibility() {
+        #if os(iOS) || os(visionOS)
+        UIAccessibility.post(notification: .layoutChanged, argument: nil)
+        #endif
+    }
 }

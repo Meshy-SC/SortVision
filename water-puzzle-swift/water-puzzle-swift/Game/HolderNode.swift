@@ -58,6 +58,23 @@ final class HolderNode: SKNode {
     /// Whether this tube contains no liquid segments.
     var isEmpty: Bool { liquids.isEmpty }
 
+    /// Human-readable description of tube contents for VoiceOver accessibility.
+    ///
+    /// Describes liquid colors from bottom to top, e.g. "2 green, 1 blue, 1 red".
+    var accessibilityContentDescription: String {
+        guard !liquids.isEmpty else { return "empty" }
+        let colorNames = ["green", "yellow", "orange", "blue", "lime",
+                          "bright yellow", "dark green", "teal", "purple", "pink", "gray"]
+        let parts = liquids.map { liquid in
+            let colorName = liquid.groupId < colorNames.count ? colorNames[liquid.groupId] : "unknown"
+            let units = Int(liquid.value.rounded())
+            return "\(units) \(colorName)"
+        }
+        let fillCount = Int(totalLiquidValue.rounded())
+        let status = isFull ? "full" : "\(fillCount) of \(Self.maxValue)"
+        return parts.joined(separator: ", ") + " (\(status))"
+    }
+
     // MARK: - Init
 
     override init() {
