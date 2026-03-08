@@ -14,20 +14,39 @@ enum ColorPalette3D {
 
     // MARK: - SIMD Colors
 
-    /// The 11-color palette as SIMD4<Float> (linear RGB, alpha = 1).
-    /// Index order is identical to `ColorPalette.colors`.
+    /// 12-color palette based on Apple's system colors (HIG).
+    ///
+    /// Apple designed these to be maximally distinguishable from each other
+    /// across all lighting conditions and for users with color vision
+    /// differences. Ordering alternates warm/cool hues so colours that
+    /// commonly appear together in early levels are easy to tell apart.
+    ///
+    /// sRGB values sourced from Apple Human Interface Guidelines (iOS light).
     static let colors: [SIMD4<Float>] = [
-        SIMD4<Float>(0.180, 0.800, 0.443, 1), // 0: Green
-        SIMD4<Float>(0.960, 0.800, 0.120, 1), // 1: Yellow
-        SIMD4<Float>(0.827, 0.329, 0.000, 1), // 2: Orange
-        SIMD4<Float>(0.161, 0.502, 0.725, 1), // 3: Blue
-        SIMD4<Float>(0.608, 0.811, 0.218, 1), // 4: Lime
-        SIMD4<Float>(0.950, 0.850, 0.100, 1), // 5: Bright Yellow
-        SIMD4<Float>(0.092, 0.528, 0.329, 1), // 6: Dark Green
-        SIMD4<Float>(0.086, 0.627, 0.522, 1), // 7: Teal
-        SIMD4<Float>(0.557, 0.267, 0.678, 1), // 8: Purple
-        SIMD4<Float>(0.910, 0.263, 0.576, 1), // 9: Pink
-        SIMD4<Float>(0.498, 0.549, 0.553, 1), // 10: Gray
+        // 0  — Red          systemRed     (255,  59,  48)
+        SIMD4<Float>(1.000, 0.231, 0.188, 1),
+        // 1  — Blue         systemBlue    (  0, 122, 255)
+        SIMD4<Float>(0.000, 0.478, 1.000, 1),
+        // 2  — Yellow       systemYellow  (255, 204,   0)
+        SIMD4<Float>(1.000, 0.800, 0.000, 1),
+        // 3  — Green        systemGreen   ( 52, 199,  89)
+        SIMD4<Float>(0.204, 0.780, 0.349, 1),
+        // 4  — Purple       systemPurple  (175,  82, 222)
+        SIMD4<Float>(0.686, 0.322, 0.871, 1),
+        // 5  — Orange       systemOrange  (255, 149,   0)
+        SIMD4<Float>(1.000, 0.584, 0.000, 1),
+        // 6  — Cyan         systemCyan    ( 50, 173, 230)
+        SIMD4<Float>(0.196, 0.678, 0.902, 1),
+        // 7  — Pink         systemPink    (255,  45,  85)
+        SIMD4<Float>(1.000, 0.176, 0.333, 1),
+        // 8  — Mint         systemMint    (  0, 199, 190)
+        SIMD4<Float>(0.000, 0.780, 0.745, 1),
+        // 9  — Indigo       systemIndigo  ( 88,  86, 214)
+        SIMD4<Float>(0.345, 0.337, 0.839, 1),
+        // 10 — Brown        systemBrown   (162, 132,  94)
+        SIMD4<Float>(0.635, 0.518, 0.369, 1),
+        // 11 — Teal         systemTeal    ( 48, 176, 199)
+        SIMD4<Float>(0.188, 0.690, 0.780, 1),
     ]
 
     /// Returns the SIMD color for a given `groupId`, or white if out of range.
