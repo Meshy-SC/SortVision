@@ -1,32 +1,16 @@
 import SwiftUI
 import RealityKit
 
-/// A SwiftUI view that hosts the 3D water puzzle scene using RealityKit.
+/// SwiftUI host for the RealityKit 3D puzzle scene.
 ///
-/// Replaces the `SpriteView(scene:)` usage in `GameplayView`.
-/// Sets up camera, lighting, background, and tap gesture handling.
+/// Uses the system background colour rather than a custom dark colour.
+/// The ground plane is subtle enough to work against both light and dark mode.
 struct GameRealityView: View {
-
-    /// The 3D game scene coordinator.
     @ObservedObject var scene: GameScene3D
 
     var body: some View {
-        ZStack {
-            // Dark background matching the original game
-            Color(red: 0.12, green: 0.15, blue: 0.22)
-                .ignoresSafeArea()
-
-            realityContent
-        }
-    }
-
-    @ViewBuilder
-    private var realityContent: some View {
         RealityView { content in
-            // Add the game's root entity
             content.add(scene.rootEntity)
-
-            // Add a subtle ground plane for visual grounding
             addGroundPlane()
         }
         .gesture(tapGesture)
@@ -34,10 +18,12 @@ struct GameRealityView: View {
 
     // MARK: - Scene Helpers
 
-    /// Adds a dark, subtle ground plane beneath the tubes.
+    /// Adds a subtle ground plane beneath the tubes.
     private func addGroundPlane() {
         var groundMaterial = PhysicallyBasedMaterial()
-        groundMaterial.baseColor = .init(tint: .init(red: 0.10, green: 0.12, blue: 0.18, alpha: 1.0))
+        groundMaterial.baseColor = .init(
+            tint: .init(red: 0.14, green: 0.14, blue: 0.16, alpha: 1.0)
+        )
         groundMaterial.roughness = .init(floatLiteral: 0.8)
         groundMaterial.metallic = .init(floatLiteral: 0.0)
 
@@ -52,7 +38,6 @@ struct GameRealityView: View {
 
     // MARK: - Tap Gesture
 
-    /// Spatial tap gesture that resolves which entity was tapped.
     private var tapGesture: some Gesture {
         SpatialTapGesture()
             .targetedToAnyEntity()
@@ -65,7 +50,6 @@ struct GameRealityView: View {
 // MARK: - Accessibility
 
 extension GameRealityView {
-    /// Provides an accessibility label for VoiceOver users.
     var accessibilityDescription: String {
         guard let level = scene.level else { return "Water sort puzzle" }
         return "Water sort puzzle, level \(level.number), 3D view"

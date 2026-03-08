@@ -1,8 +1,10 @@
 import RealityKit
 import SwiftUI
 
-/// Gameplay screen wrapping the RealityKit 3D scene with a HUD overlay.
-/// Mirrors Unity's Game scene with UIManager HUD buttons.
+/// Gameplay screen — native toolbar-based HUD with system background.
+///
+/// Uses a standard `toolbar` for Home/Restart controls instead of a
+/// custom overlay. The RealityView fills the safe area.
 struct GameplayView: View {
     let gameMode: GameMode
     let level: Level
@@ -15,30 +17,16 @@ struct GameplayView: View {
 
     var body: some View {
         ZStack {
-            // RealityKit 3D game scene
+            // 3D game scene
             if let scene3D {
                 GameRealityView(scene: scene3D)
-                    .ignoresSafeArea()
+                    .ignoresSafeArea(edges: .bottom)
                     .accessibilityLabel("Water sort puzzle, level \(level.number)")
                     .accessibilityHint("Tap tubes to select and pour water between them")
             } else {
-                Color(red: 0.12, green: 0.15, blue: 0.22)
-                    .ignoresSafeArea()
+                ProgressView("Loading…")
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
-
-            // HUD overlay (iOS & macOS) — on visionOS the HUD is an ornament
-            #if !os(visionOS)
-            GameHUDView(
-                levelNumber: level.number,
-                onHome: {
-                    path.removeLast(path.count)
-                },
-                onRestart: {
-                    showLevelComplete = false
-                    scene3D?.restart()
-                }
-            )
-            #endif
 
             // Level complete overlay
             if showLevelComplete {
@@ -58,20 +46,45 @@ struct GameplayView: View {
             reduceMotion ? .none : .easeInOut(duration: 0.3),
             value: showLevelComplete
         )
+        .navigationTitle("Level \(level.number)")
         .navigationBarBackButtonHidden(true)
+        #if os(iOS)
+        .navigationBarTitleDisplayMode(.inline)
+        #endif
+        .toolbar {
+            ToolbarItem(placement: .cancellationAction) {
+                Button {
+                    path.removeLast(path.count)
+                } label: {
+                    Label("Home", systemImage: "house")
+                }
+                .accessibilityHint("Returns to main menu")
+                .keyboardShortcut("h", modifiers: .command)
+            }
+
+            ToolbarItem(placement: .primaryAction) {
+                Button {
+                    showLevelComplete = false
+                    scene3D?.restart()
+                } label: {
+                    Label("Restart", systemImage: "arrow.counterclockwise")
+                }
+                .accessibilityHint("Resets the current puzzle")
+                .keyboardShortcut("r", modifiers: .command)
+            }
+        }
         #if os(visionOS)
-        // visionOS: Non-blocking ornament at the bottom edge of the window
         .ornament(attachmentAnchor: .scene(.bottom)) {
             HStack(spacing: 20) {
                 Button {
                     path.removeLast(path.count)
                 } label: {
-                    Label("Home", systemImage: "house.fill")
+                    Label("Home", systemImage: "house")
                 }
                 .accessibilityHint("Returns to main menu")
 
                 Text("Level \(level.number)")
-                    .font(.system(.headline, design: .rounded, weight: .bold))
+                    .font(.headline)
                     .accessibilityAddTraits(.isHeader)
 
                 Button {
@@ -104,7 +117,6 @@ struct GameplayView: View {
         gameScene.gameMode = gameMode
         gameScene.reduceMotion = reduceMotion
 
-        // Bridge RealityKit callbacks to SwiftUI layer
         gameScene.onLevelComplete = {
             showLevelComplete = true
         }

@@ -1,9 +1,9 @@
 import SwiftUI
 
-/// Level completion overlay. Mirrors Unity's LevelCompletePanel:
-/// - Random toast message ("Great!", "Awesome!", etc.)
-/// - Continue button → loads next level
-/// - Main Menu button → returns to root
+/// Level completion — native Apple modal-style overlay.
+///
+/// Uses system materials, standard button styles, and
+/// primary/secondary label colours. No custom forced colours.
 struct LevelCompletionOverlay: View {
     let gameMode: GameMode
     let levelNumber: Int
@@ -11,7 +11,6 @@ struct LevelCompletionOverlay: View {
     @Environment(GameManager.self) private var gameManager
     @AccessibilityFocusState private var isOverlayFocused: Bool
 
-    /// Random congratulation messages matching the Unity ToastMessage pool.
     private let toastMessages = [
         "Great!", "Awesome!", "Well Done!", "Amazing!",
         "Perfect!", "Brilliant!", "Fantastic!", "Excellent!",
@@ -21,64 +20,69 @@ struct LevelCompletionOverlay: View {
 
     var body: some View {
         ZStack {
-            // Dimmed background
-            Color.black.opacity(0.5)
+            // Dimmed scrim
+            Color.black.opacity(0.4)
                 .ignoresSafeArea()
-                .onTapGesture {} // Absorb taps
+                .onTapGesture {}
 
-            VStack(spacing: 24) {
-                // Toast message
+            VStack(spacing: 20) {
+                Image(systemName: "checkmark.seal.fill")
+                    .font(.system(size: 48))
+                    .foregroundStyle(.green)
+                    .symbolEffect(.bounce, options: .nonRepeating)
+                    .accessibilityHidden(true)
+
                 Text(displayedMessage)
-                    .font(.system(.title, design: .rounded, weight: .bold))
-                    .foregroundStyle(.yellow)
+                    .font(.title.bold())
                     .accessibilityFocused($isOverlayFocused)
 
-                Text("Level \(levelNumber) Complete!")
-                    .font(.system(.title3, design: .rounded, weight: .medium))
-                    .foregroundStyle(.white)
+                Text("Level \(levelNumber) Complete")
+                    .font(.headline)
+                    .foregroundStyle(.secondary)
 
-                VStack(spacing: 16) {
-                    // Continue button — uses built-in borderedProminent style
+                Divider()
+                    .padding(.horizontal, 24)
+
+                VStack(spacing: 12) {
                     if gameManager.hasNextLevel(mode: gameMode, after: levelNumber) {
-                        Button("Continue") {
+                        Button {
                             if let nextLevel = gameManager.level(
                                 for: gameMode, number: levelNumber + 1)
                             {
                                 path.removeLast()
                                 path.append(AppScreen.gameplay(gameMode, nextLevel))
                             }
+                        } label: {
+                            Text("Next Level")
+                                .frame(maxWidth: 240)
                         }
-                        .font(.system(.title3, design: .rounded, weight: .bold))
                         .buttonStyle(.borderedProminent)
-                        .tint(.green)
                         .controlSize(.large)
-                        .buttonBorderShape(.roundedRectangle(radius: 14))
                         .accessibilityHint("Advances to level \(levelNumber + 1)")
                         .keyboardShortcut(.defaultAction)
                     }
 
-                    // Main Menu button — uses built-in borderedProminent style
-                    Button("Main Menu") {
+                    Button {
                         path.removeLast(path.count)
+                    } label: {
+                        Text("Main Menu")
+                            .frame(maxWidth: 240)
                     }
-                    .font(.system(.title3, design: .rounded, weight: .bold))
-                    .buttonStyle(.borderedProminent)
-                    .tint(.gray)
+                    .buttonStyle(.bordered)
                     .controlSize(.large)
-                    .buttonBorderShape(.roundedRectangle(radius: 14))
                     .accessibilityHint("Returns to the main menu")
                     .keyboardShortcut(.cancelAction)
                 }
             }
-            .padding(40)
-            .background(.ultraThickMaterial, in: RoundedRectangle(cornerRadius: 24))
-            .shadow(radius: 20)
+            .padding(32)
+            .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 20))
+            .shadow(color: .black.opacity(0.15), radius: 20)
+            .padding(.horizontal, 40)
             .accessibilityElement(children: .contain)
             .accessibilityAddTraits(.isModal)
         }
         .onAppear {
             displayedMessage = toastMessages.randomElement() ?? "Great!"
-            // Move VoiceOver focus to the overlay after a brief delay
             Task {
                 try? await Task.sleep(for: .milliseconds(500))
                 isOverlayFocused = true
