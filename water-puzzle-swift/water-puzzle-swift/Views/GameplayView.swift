@@ -1,7 +1,7 @@
-import SpriteKit
+import RealityKit
 import SwiftUI
 
-/// Gameplay screen wrapping the SpriteKit GameScene with a HUD overlay.
+/// Gameplay screen wrapping the RealityKit 3D scene with a HUD overlay.
 /// Mirrors Unity's Game scene with UIManager HUD buttons.
 struct GameplayView: View {
     let gameMode: GameMode
@@ -10,14 +10,14 @@ struct GameplayView: View {
     @Environment(GameManager.self) private var gameManager
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
-    @State private var scene: GameScene?
+    @State private var scene3D: GameScene3D?
     @State private var showLevelComplete = false
 
     var body: some View {
         ZStack {
-            // SpriteKit game scene
-            if let scene {
-                SpriteView(scene: scene)
+            // RealityKit 3D game scene
+            if let scene3D {
+                GameRealityView(scene: scene3D)
                     .ignoresSafeArea()
                     .accessibilityLabel("Water sort puzzle, level \(level.number)")
                     .accessibilityHint("Tap tubes to select and pour water between them")
@@ -35,7 +35,7 @@ struct GameplayView: View {
                 },
                 onRestart: {
                     showLevelComplete = false
-                    scene?.restart()
+                    scene3D?.restart()
                 }
             )
             #endif
@@ -76,7 +76,7 @@ struct GameplayView: View {
 
                 Button {
                     showLevelComplete = false
-                    scene?.restart()
+                    scene3D?.restart()
                 } label: {
                     Label("Restart", systemImage: "arrow.counterclockwise")
                 }
@@ -92,20 +92,19 @@ struct GameplayView: View {
         .sensoryFeedback(.success, trigger: showLevelComplete)
         #endif
         .onAppear {
-            if scene == nil {
+            if scene3D == nil {
                 createScene()
             }
         }
     }
 
     private func createScene() {
-        let gameScene = GameScene(size: CGSize(width: 750, height: 1334))
-        gameScene.scaleMode = .aspectFill
+        let gameScene = GameScene3D()
         gameScene.level = level
         gameScene.gameMode = gameMode
         gameScene.reduceMotion = reduceMotion
 
-        // Bridge SpriteKit callbacks to SwiftUI layer
+        // Bridge RealityKit callbacks to SwiftUI layer
         gameScene.onLevelComplete = {
             showLevelComplete = true
         }
@@ -113,6 +112,7 @@ struct GameplayView: View {
             gameManager.completeLevel(mode: mode, number: number)
         }
 
-        scene = gameScene
+        gameScene.setup()
+        scene3D = gameScene
     }
 }

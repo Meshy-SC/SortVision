@@ -1,5 +1,4 @@
 import Foundation
-import SpriteKit
 import Testing
 
 @testable import water_puzzle_swift

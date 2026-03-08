@@ -6,6 +6,23 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXContainerItemProxy section */
+		2C7A71A52F5A0EEE0074D97E /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 2C7A71472F5A0EEE0074D97E /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 2C7A714E2F5A0EEE0074D97E;
+			remoteInfo = "water-puzzle-swift";
+		};
+		2C7A71B52F5A0EEE0074D97E /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 2C7A71472F5A0EEE0074D97E /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 2C7A714E2F5A0EEE0074D97E;
+			remoteInfo = "water-puzzle-swift";
+		};
+/* End PBXContainerItemProxy section */
+
 /* Begin PBXFileReference section */
 		2C7A714F2F5A0EEE0074D97E /* water-puzzle-swift.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "water-puzzle-swift.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		2C7A71A02F5A0EEE0074D97E /* water-puzzle-swiftTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "water-puzzle-swiftTests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -238,23 +255,6 @@
 		};
 /* End PBXSourcesBuildPhase section */
 
-/* Begin PBXContainerItemProxy section */
-		2C7A71A52F5A0EEE0074D97E /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = 2C7A71472F5A0EEE0074D97E /* Project object */;
-			proxyType = 1;
-			remoteGlobalIDString = 2C7A714E2F5A0EEE0074D97E;
-			remoteInfo = "water-puzzle-swift";
-		};
-		2C7A71B52F5A0EEE0074D97E /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = 2C7A71472F5A0EEE0074D97E /* Project object */;
-			proxyType = 1;
-			remoteGlobalIDString = 2C7A714E2F5A0EEE0074D97E;
-			remoteInfo = "water-puzzle-swift";
-		};
-/* End PBXContainerItemProxy section */
-
 /* Begin PBXTargetDependency section */
 		2C7A71A62F5A0EEE0074D97E /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
@@ -397,7 +397,7 @@
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = "Info.plist";
+				INFOPLIST_FILE = Info.plist;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
@@ -440,7 +440,7 @@
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = "Info.plist";
+				INFOPLIST_FILE = Info.plist;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;

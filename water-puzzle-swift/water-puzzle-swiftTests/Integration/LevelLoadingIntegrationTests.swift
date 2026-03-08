@@ -56,7 +56,7 @@ struct LevelLoadingIntegrationTests {
         let levels = GameManager.shared.levels(for: mode)
         for level in levels {
             for (colIdx, column) in level.columns.enumerated() {
-                #expect(column.values.count <= HolderNode.maxValue,
+                #expect(column.values.count <= TubeEntity.maxValue,
                         "\(mode.displayName) level \(level.number) column \(colIdx) exceeds max capacity")
             }
         }
@@ -66,7 +66,7 @@ struct LevelLoadingIntegrationTests {
           arguments: GameMode.allCases)
     func allGroupIdsAreValid(mode: GameMode) {
         let levels = GameManager.shared.levels(for: mode)
-        let validRange = 0..<ColorPalette.colors.count
+        let validRange = 0..<ColorPalette3D.colors.count
 
         for level in levels {
             for (colIdx, column) in level.columns.enumerated() {
