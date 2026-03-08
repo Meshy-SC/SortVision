@@ -47,8 +47,19 @@ final class GameScene3D: ObservableObject {
     private var isTransferring = false
     private var gameState: GameState = .idle
 
-    /// Horizontal spacing between tube centers (meters).
-    private let holderSpacing: Float = 0.08
+    /// Preferred horizontal spacing between tube centres (meters).
+    /// Actual spacing may shrink for levels with many tubes.
+    private let preferredSpacing: Float = 0.08
+
+    /// Minimum spacing – tube diameter + a small gap so they never touch.
+    private let minimumSpacing: Float = TubeEntity.outerWidth + 0.014
+
+    /// Maximum total row width (meters) before the layout must shrink spacing.
+    /// Tuned so tubes stay comfortably within the RealityView viewport.
+    private let maxRowWidth: Float = 0.50
+
+    /// Maximum tubes that fit in a single row before switching to two rows.
+    private let maxPerSingleRow: Int = 7
 
     enum GameState {
         case idle, playing, over
@@ -117,40 +128,54 @@ final class GameScene3D: ObservableObject {
 
     // MARK: - Layout
 
-    /// Calculates tube positions in 3D space. Single row for ≤6, two rows otherwise.
-    /// Returns positions in the XZ plane (Y=0), matching the RealityKit convention.
+    /// Calculates tube positions in 3D space.
+    ///
+    /// Uses a single row when the tube count fits comfortably (`≤ maxPerSingleRow`).
+    /// Beyond that, tubes are split across two rows with enough depth separation
+    /// to avoid visual overlap under perspective projection.
+    ///
+    /// Spacing is adaptive: it shrinks from `preferredSpacing` towards
+    /// `minimumSpacing` as the row grows, ensuring tubes never overlap.
     private func positionsForHolders(count: Int) -> [SIMD3<Float>] {
-        if count <= 6 {
-            let totalWidth = Float(count - 1) * holderSpacing
-            let startX = -totalWidth / 2
-            return (0..<count).map { i in
-                SIMD3<Float>(startX + Float(i) * holderSpacing, 0, 0)
-            }
+        guard count > 0 else { return [] }
+
+        if count <= maxPerSingleRow {
+            let spacing = spacingForRow(of: count)
+            return singleRow(count: count, spacing: spacing, z: 0)
         }
 
-        // Two rows
-        let topRowCount = Int(ceil(Double(count) / 2.0))
-        let bottomRowCount = count - topRowCount
-        let rowSpacing: Float = TubeEntity.totalHeight + 0.05
+        // Two rows — larger row goes in back so the front row doesn't obscure it.
+        let backRowCount  = Int(ceil(Double(count) / 2.0))
+        let frontRowCount = count - backRowCount
 
-        let frontZ: Float = rowSpacing / 2     // front row (closer to camera)
-        let backZ: Float = -rowSpacing / 2     // back row
+        let spacing = spacingForRow(of: max(backRowCount, frontRowCount))
 
-        // Back row (rendered behind)
-        let topTotalWidth = Float(topRowCount - 1) * holderSpacing
-        let topStartX = -topTotalWidth / 2
-        let topPositions = (0..<topRowCount).map { i in
-            SIMD3<Float>(topStartX + Float(i) * holderSpacing, 0, backZ)
+        // Depth gap between rows — enough so the front row doesn't clip the back row.
+        let rowDepth: Float = TubeEntity.totalHeight * 0.7 + 0.06
+        let backZ:  Float = -rowDepth / 2
+        let frontZ: Float =  rowDepth / 2
+
+        let backPositions  = singleRow(count: backRowCount,  spacing: spacing, z: backZ)
+        let frontPositions = singleRow(count: frontRowCount, spacing: spacing, z: frontZ)
+
+        return backPositions + frontPositions
+    }
+
+    /// Returns the best spacing for a row of `n` tubes so the row fits within
+    /// `maxRowWidth` while never going below `minimumSpacing`.
+    private func spacingForRow(of n: Int) -> Float {
+        guard n > 1 else { return preferredSpacing }
+        let maxFit = maxRowWidth / Float(n - 1)
+        return max(min(preferredSpacing, maxFit), minimumSpacing)
+    }
+
+    /// Builds an array of centred positions along the X-axis at a fixed Z depth.
+    private func singleRow(count: Int, spacing: Float, z: Float) -> [SIMD3<Float>] {
+        let totalWidth = Float(count - 1) * spacing
+        let startX = -totalWidth / 2
+        return (0..<count).map { i in
+            SIMD3<Float>(startX + Float(i) * spacing, 0, z)
         }
-
-        // Front row
-        let bottomTotalWidth = Float(bottomRowCount - 1) * holderSpacing
-        let bottomStartX = -bottomTotalWidth / 2
-        let bottomPositions = (0..<bottomRowCount).map { i in
-            SIMD3<Float>(bottomStartX + Float(i) * holderSpacing, 0, frontZ)
-        }
-
-        return topPositions + bottomPositions
     }
 
     // MARK: - Tap Handling
