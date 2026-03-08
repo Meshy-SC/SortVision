@@ -77,60 +77,46 @@ final class GameScene3D: ObservableObject {
 
     // MARK: - Lighting
 
-    /// Adds strong multi-directional lighting so bottles and liquid colours
-    /// are clearly visible against any background.
+    /// Height above each tube where its spotlight is placed (meters).
+    private let spotlightHeight: Float = 0.25
+
+    /// Adds a soft ambient fill light to the scene.
+    /// Individual spotlights are added per tube in `loadLevel()`.
     private func addLighting() {
-        // Key light — strong, from above-front-right
-        let keyLight = Entity()
-        keyLight.name = "KeyLight"
-        var key = DirectionalLightComponent()
-        key.intensity = 6000
-        key.color = .white
-        keyLight.components.set(key)
-        keyLight.orientation = simd_quatf(
-            angle: -.pi / 3, axis: SIMD3<Float>(1, 0, 0)
+        // Soft directional fill so nothing is fully dark
+        let fill = Entity()
+        fill.name = "AmbientFill"
+        var fillComp = DirectionalLightComponent()
+        fillComp.intensity = 1500
+        fillComp.color = .init(white: 0.9, alpha: 1)
+        fill.components.set(fillComp)
+        fill.orientation = simd_quatf(
+            angle: -.pi / 6, axis: SIMD3<Float>(1, 0, 0)
         )
-        keyLight.position = SIMD3<Float>(0.2, 0.6, 0.4)
-        rootEntity.addChild(keyLight)
+        fill.position = SIMD3<Float>(0, 0.5, 0.3)
+        rootEntity.addChild(fill)
+    }
 
-        // Fill light — from the left side to reduce harsh shadows
-        let fillLight = Entity()
-        fillLight.name = "FillLight"
-        var fill = DirectionalLightComponent()
-        fill.intensity = 3000
-        fill.color = .init(white: 0.9, alpha: 1)
-        fillLight.components.set(fill)
-        fillLight.orientation = simd_quatf(
-            angle: -.pi / 5, axis: SIMD3<Float>(0, 0, 1)
-        )
-        fillLight.position = SIMD3<Float>(-0.4, 0.4, 0.1)
-        rootEntity.addChild(fillLight)
+    /// Creates a spotlight entity that shines downward onto a tube.
+    /// Parented to the tube so it follows during pour animations.
+    private func makeSpotlight(for tube: TubeEntity) -> Entity {
+        let light = Entity()
+        light.name = "Spotlight_\(tube.holderIndex)"
 
-        // Front light — directly toward the bottles so colours pop
-        let frontLight = Entity()
-        frontLight.name = "FrontLight"
-        var front = DirectionalLightComponent()
-        front.intensity = 2500
-        front.color = .init(white: 0.95, alpha: 1)
-        frontLight.components.set(front)
-        frontLight.orientation = simd_quatf(
-            angle: -.pi / 8, axis: SIMD3<Float>(1, 0, 0)
-        )
-        frontLight.position = SIMD3<Float>(0, 0.3, 0.6)
-        rootEntity.addChild(frontLight)
+        var spot = SpotLightComponent()
+        spot.intensity = 12000
+        spot.color = .white
+        spot.innerAngleInDegrees = 20
+        spot.outerAngleInDegrees = 45
+        spot.attenuationRadius = 0.6
+        light.components.set(spot)
 
-        // Rim / back light — gives bottles a bright edge outline
-        let rimLight = Entity()
-        rimLight.name = "RimLight"
-        var rim = DirectionalLightComponent()
-        rim.intensity = 2000
-        rim.color = .init(white: 0.85, alpha: 1)
-        rimLight.components.set(rim)
-        rimLight.orientation = simd_quatf(
-            angle: .pi / 4, axis: SIMD3<Float>(1, 0, 0)
+        // Position above tube centre, pointing straight down
+        light.position = SIMD3<Float>(0, TubeEntity.totalHeight + spotlightHeight, 0)
+        light.orientation = simd_quatf(
+            angle: -.pi / 2, axis: SIMD3<Float>(1, 0, 0)
         )
-        rimLight.position = SIMD3<Float>(0, 0.4, -0.5)
-        rootEntity.addChild(rimLight)
+        return light
     }
 
     // MARK: - Level Loading
@@ -148,6 +134,11 @@ final class GameScene3D: ObservableObject {
             tube.holderIndex = i
             tube.position = positions[i]
             tube.populate(with: liquidSegments[i])
+
+            // Attach a personal spotlight — follows the tube during pour
+            let spot = makeSpotlight(for: tube)
+            tube.addChild(spot)
+
             rootEntity.addChild(tube)
             holders.append(tube)
         }
