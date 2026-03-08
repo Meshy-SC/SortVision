@@ -77,33 +77,60 @@ final class GameScene3D: ObservableObject {
 
     // MARK: - Lighting
 
-    /// Adds ambient and directional lighting so the glass and liquids look good.
+    /// Adds strong multi-directional lighting so bottles and liquid colours
+    /// are clearly visible against any background.
     private func addLighting() {
-        // Key directional light — from above-front
-        let directionalLight = Entity()
-        directionalLight.name = "KeyLight"
-        var directional = DirectionalLightComponent()
-        directional.intensity = 2500
-        directional.color = .white
-        directionalLight.components.set(directional)
-        directionalLight.orientation = simd_quatf(
-            angle: -.pi / 4, axis: SIMD3<Float>(1, 0, 0)
+        // Key light — strong, from above-front-right
+        let keyLight = Entity()
+        keyLight.name = "KeyLight"
+        var key = DirectionalLightComponent()
+        key.intensity = 6000
+        key.color = .white
+        keyLight.components.set(key)
+        keyLight.orientation = simd_quatf(
+            angle: -.pi / 3, axis: SIMD3<Float>(1, 0, 0)
         )
-        directionalLight.position = SIMD3<Float>(0, 0.5, 0.3)
-        rootEntity.addChild(directionalLight)
+        keyLight.position = SIMD3<Float>(0.2, 0.6, 0.4)
+        rootEntity.addChild(keyLight)
 
-        // Softer fill light from the side
+        // Fill light — from the left side to reduce harsh shadows
         let fillLight = Entity()
         fillLight.name = "FillLight"
         var fill = DirectionalLightComponent()
-        fill.intensity = 800
-        fill.color = .init(white: 0.8, alpha: 1)
+        fill.intensity = 3000
+        fill.color = .init(white: 0.9, alpha: 1)
         fillLight.components.set(fill)
         fillLight.orientation = simd_quatf(
-            angle: -.pi / 6, axis: SIMD3<Float>(0, 0, 1)
+            angle: -.pi / 5, axis: SIMD3<Float>(0, 0, 1)
         )
-        fillLight.position = SIMD3<Float>(-0.3, 0.3, 0)
+        fillLight.position = SIMD3<Float>(-0.4, 0.4, 0.1)
         rootEntity.addChild(fillLight)
+
+        // Front light — directly toward the bottles so colours pop
+        let frontLight = Entity()
+        frontLight.name = "FrontLight"
+        var front = DirectionalLightComponent()
+        front.intensity = 2500
+        front.color = .init(white: 0.95, alpha: 1)
+        frontLight.components.set(front)
+        frontLight.orientation = simd_quatf(
+            angle: -.pi / 8, axis: SIMD3<Float>(1, 0, 0)
+        )
+        frontLight.position = SIMD3<Float>(0, 0.3, 0.6)
+        rootEntity.addChild(frontLight)
+
+        // Rim / back light — gives bottles a bright edge outline
+        let rimLight = Entity()
+        rimLight.name = "RimLight"
+        var rim = DirectionalLightComponent()
+        rim.intensity = 2000
+        rim.color = .init(white: 0.85, alpha: 1)
+        rimLight.components.set(rim)
+        rimLight.orientation = simd_quatf(
+            angle: .pi / 4, axis: SIMD3<Float>(1, 0, 0)
+        )
+        rimLight.position = SIMD3<Float>(0, 0.4, -0.5)
+        rootEntity.addChild(rimLight)
     }
 
     // MARK: - Level Loading
