@@ -21,6 +21,16 @@ struct SettingsView: View {
                     #endif
                 } header: {
                     Text("Audio")
+                } footer: {
+                    Text("Plays sound effects during gameplay.")
+                }
+
+                Section {
+                    LabeledContent("Version") {
+                        Text(Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0")
+                    }
+                } header: {
+                    Text("About")
                 }
             }
             .navigationTitle("Settings")

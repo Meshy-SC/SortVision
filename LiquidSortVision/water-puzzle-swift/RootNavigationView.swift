@@ -22,7 +22,7 @@ struct RootNavigationView: View {
 
     var body: some View {
         NavigationStack(path: $path) {
-            DifficultySelectionView(path: $path)
+            DifficultySelectionView()
                 .navigationDestination(for: AppScreen.self) { screen in
                     switch screen {
                     case .levelGrid(let mode):

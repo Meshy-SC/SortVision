@@ -38,12 +38,12 @@ struct GameplayView: View {
                 .transition(
                     reduceMotion
                         ? .opacity
-                        : .opacity.combined(with: .scale(scale: 0.9))
+                        : .opacity.combined(with: .scale(scale: 0.92))
                 )
             }
         }
         .animation(
-            reduceMotion ? .none : .easeInOut(duration: 0.3),
+            reduceMotion ? .none : .spring(.bouncy),
             value: showLevelComplete
         )
         .navigationTitle("Level \(level.number)")

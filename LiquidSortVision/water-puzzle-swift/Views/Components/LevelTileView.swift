@@ -55,9 +55,7 @@ struct LevelTileView: View {
     }
 
     private var tileColor: Color {
-        if isLocked { return .gray }
-        if isCompleted { return .blue }
-        return .blue
+        isLocked ? .gray : .accentColor
     }
 
     private var accessibilityLabelText: String {

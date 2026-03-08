@@ -2,44 +2,55 @@ import SwiftUI
 
 /// Difficulty selection — the app's root screen.
 ///
-/// Presents each difficulty mode as a standard list row with
-/// a progress indicator, matching Apple's native apps.
-/// Includes a settings button in the toolbar.
+/// Presents each difficulty mode as a native `NavigationLink` list row with
+/// colored hierarchical SF Symbols and a progress indicator, matching Apple
+/// Settings. Uses `Section` header and footer per HIG. `NavigationLink(value:)`
+/// automatically manages the `NavigationStack` path and renders a system chevron.
 struct DifficultySelectionView: View {
     @Environment(GameManager.self) private var gameManager
-    @Binding var path: NavigationPath
     @State private var showSettings = false
 
     var body: some View {
         List {
-            ForEach(GameMode.allCases) { mode in
-                let completed = gameManager.completedLevel(for: mode)
-                let total = gameManager.levels(for: mode).count
+            Section {
+                ForEach(GameMode.allCases) { mode in
+                    let completed = gameManager.completedLevel(for: mode)
+                    let total = gameManager.levels(for: mode).count
 
-                Button {
-                    path.append(AppScreen.levelGrid(mode))
-                } label: {
-                    HStack {
-                        Label(mode.displayName, systemImage: iconName(for: mode))
-                            .font(.body.weight(.medium))
+                    NavigationLink(value: AppScreen.levelGrid(mode)) {
+                        HStack(spacing: 12) {
+                            Image(systemName: iconName(for: mode))
+                                .font(.title3)
+                                .foregroundStyle(colorForMode(mode))
+                                .symbolRenderingMode(.hierarchical)
+                                .frame(width: 28)
 
-                        Spacer()
+                            Text(mode.displayName)
+                                .font(.body)
 
-                        Text("\(completed)/\(total)")
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
+                            Spacer()
 
-                        Image(systemName: "chevron.right")
-                            .font(.caption.weight(.semibold))
-                            .foregroundStyle(.tertiary)
+                            Text("\(completed)/\(total)")
+                                .font(.subheadline.monospacedDigit())
+                                .foregroundStyle(.secondary)
+                                .contentTransition(.numericText())
+                        }
+                        .padding(.vertical, 2)
                     }
-                    .padding(.vertical, 4)
+                    .accessibilityLabel("\(mode.displayName), \(completed) of \(total) completed")
+                    .accessibilityHint("Double tap to view \(mode.displayName) levels")
                 }
-                .tint(.primary)
-                .accessibilityLabel("\(mode.displayName), \(completed) of \(total) completed")
-                .accessibilityHint("Double tap to view \(mode.displayName) levels")
+            } header: {
+                Text("Difficulty")
+            } footer: {
+                Text("Complete levels in order to unlock the next one.")
             }
         }
+        #if os(macOS)
+        .listStyle(.inset)
+        #else
+        .listStyle(.insetGrouped)
+        #endif
         .navigationTitle("Water Sort")
         #if os(iOS)
         .navigationBarTitleDisplayMode(.large)
@@ -66,6 +77,15 @@ struct DifficultySelectionView: View {
         case .normal: "hare.fill"
         case .hard:   "flame.fill"
         case .expert: "bolt.fill"
+        }
+    }
+
+    private func colorForMode(_ mode: GameMode) -> Color {
+        switch mode {
+        case .easy:   .green
+        case .normal: .blue
+        case .hard:   .orange
+        case .expert: .red
         }
     }
 }

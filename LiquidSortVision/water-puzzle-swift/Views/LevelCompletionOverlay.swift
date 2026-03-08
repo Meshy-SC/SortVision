@@ -75,8 +75,11 @@ struct LevelCompletionOverlay: View {
                 }
             }
             .padding(32)
-            .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 20))
-            .shadow(color: .black.opacity(0.15), radius: 20)
+            .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 24))
+            #if !os(visionOS)
+            .glassEffect()
+            #endif
+            .shadow(color: .black.opacity(0.08), radius: 24, y: 8)
             .padding(.horizontal, 40)
             .accessibilityElement(children: .contain)
             .accessibilityAddTraits(.isModal)

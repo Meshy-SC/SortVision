@@ -89,15 +89,7 @@ struct WaterPuzzleWidgetView: View {
                 allCompleteView
             }
         }
-        .containerBackground(for: .widget) {
-            LinearGradient(
-                colors: [
-                    Color(red: 0.10, green: 0.13, blue: 0.20),
-                    Color(red: 0.16, green: 0.20, blue: 0.30),
-                ],
-                startPoint: .top, endPoint: .bottom
-            )
-        }
+        .containerBackground(.background, for: .widget)
     }
 
     // MARK: - Active Game View
@@ -109,7 +101,7 @@ struct WaterPuzzleWidgetView: View {
                     .foregroundStyle(colorForMode(progress.mode))
                 Text("Water Sort")
                     .font(.system(.caption, design: .rounded, weight: .bold))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.primary)
                 Spacer()
             }
 
@@ -118,7 +110,7 @@ struct WaterPuzzleWidgetView: View {
             // Progress ring
             ZStack {
                 Circle()
-                    .stroke(.white.opacity(0.15), lineWidth: 4)
+                    .stroke(.secondary.opacity(0.3), lineWidth: 4)
                 Circle()
                     .trim(from: 0, to: progress.progress)
                     .stroke(
@@ -130,10 +122,11 @@ struct WaterPuzzleWidgetView: View {
                 VStack(spacing: 0) {
                     Text("\(progress.nextLevel)")
                         .font(.system(.title2, design: .rounded, weight: .bold))
-                        .foregroundStyle(.white)
+                        .foregroundStyle(.primary)
+                        .contentTransition(.numericText())
                     Text(progress.mode.displayName)
                         .font(.system(.caption2, design: .rounded))
-                        .foregroundStyle(.white.opacity(0.7))
+                        .foregroundStyle(.secondary)
                 }
             }
             .frame(width: 60, height: 60)
@@ -142,7 +135,7 @@ struct WaterPuzzleWidgetView: View {
 
             Text("Continue →")
                 .font(.system(.caption, design: .rounded, weight: .medium))
-                .foregroundStyle(.white.opacity(0.8))
+                .foregroundStyle(.secondary)
         }
         .padding()
         .widgetURL(deepLinkURL(mode: progress.mode, level: progress.nextLevel))
@@ -157,7 +150,7 @@ struct WaterPuzzleWidgetView: View {
                 .foregroundStyle(.yellow)
             Text("All Complete!")
                 .font(.system(.caption, design: .rounded, weight: .bold))
-                .foregroundStyle(.white)
+                .foregroundStyle(.primary)
         }
         .padding()
     }
