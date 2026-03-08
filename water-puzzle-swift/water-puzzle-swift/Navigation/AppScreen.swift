@@ -4,15 +4,12 @@ import SwiftUI
 ///
 /// Defines the complete navigation graph:
 /// ```
-/// MainMenu → DifficultySelect → LevelGrid → Gameplay
+/// DifficultySelect (root) → LevelGrid → Gameplay
 /// ```
 ///
 /// Used with `NavigationStack(path:)` in `RootNavigationView` for
 /// declarative, type-safe navigation throughout the app.
 enum AppScreen: Hashable, Sendable {
-    /// Difficulty selection screen (Easy, Normal, Hard, Expert).
-    case difficultySelect
-
     /// Level selection grid for a specific game mode.
     case levelGrid(GameMode)
 

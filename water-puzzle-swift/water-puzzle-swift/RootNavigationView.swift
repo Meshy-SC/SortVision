@@ -7,7 +7,7 @@ import SwiftUI
 ///
 /// ## Navigation Flow
 /// ```
-/// MainMenu → DifficultySelection → LevelGrid → Gameplay
+/// DifficultySelection (root) → LevelGrid → Gameplay
 /// ```
 ///
 /// Route definitions live in `Navigation/AppScreen.swift`.
@@ -22,11 +22,9 @@ struct RootNavigationView: View {
 
     var body: some View {
         NavigationStack(path: $path) {
-            MainMenuView(path: $path)
+            DifficultySelectionView(path: $path)
                 .navigationDestination(for: AppScreen.self) { screen in
                     switch screen {
-                    case .difficultySelect:
-                        DifficultySelectionView(path: $path)
                     case .levelGrid(let mode):
                         LevelGridView(path: $path, gameMode: mode)
                     case .gameplay(let mode, let level):
@@ -81,7 +79,6 @@ struct RootNavigationView: View {
         path = NavigationPath()
         Task {
             try? await Task.sleep(for: .milliseconds(100))
-            path.append(AppScreen.difficultySelect)
             path.append(AppScreen.levelGrid(mode))
             path.append(AppScreen.gameplay(mode, level))
         }

@@ -1,12 +1,14 @@
 import SwiftUI
 
-/// Difficulty selection — native Apple List style.
+/// Difficulty selection — the app's root screen.
 ///
 /// Presents each difficulty mode as a standard list row with
-/// a progress indicator, matching the style of Apple's native apps.
+/// a progress indicator, matching Apple's native apps.
+/// Includes a settings button in the toolbar.
 struct DifficultySelectionView: View {
     @Environment(GameManager.self) private var gameManager
     @Binding var path: NavigationPath
+    @State private var showSettings = false
 
     var body: some View {
         List {
@@ -38,10 +40,24 @@ struct DifficultySelectionView: View {
                 .accessibilityHint("Double tap to view \(mode.displayName) levels")
             }
         }
-        .navigationTitle("Difficulty")
+        .navigationTitle("Water Sort")
         #if os(iOS)
         .navigationBarTitleDisplayMode(.large)
         #endif
+        .toolbar {
+            ToolbarItem(placement: .primaryAction) {
+                Button {
+                    showSettings = true
+                } label: {
+                    Label("Settings", systemImage: "gearshape")
+                }
+                .accessibilityHint("Opens app settings")
+            }
+        }
+        .sheet(isPresented: $showSettings) {
+            SettingsView()
+                .environment(gameManager)
+        }
     }
 
     private func iconName(for mode: GameMode) -> String {
