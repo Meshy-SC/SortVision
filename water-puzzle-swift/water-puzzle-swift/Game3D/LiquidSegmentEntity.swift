@@ -13,8 +13,8 @@ final class LiquidSegmentEntity: Entity {
     // MARK: - Constants
 
     /// Visual height per unit of liquid value (meters in RealityKit world space).
-    /// Scaled down from SpriteKit's 45 points to a manageable 3D size.
-    static let unitHeight: Float = 0.045
+    /// Tuned so the body is wide and compact, matching competitor bottle proportions.
+    static let unitHeight: Float = 0.038
 
     // MARK: - Properties
 

@@ -41,7 +41,7 @@ enum ColorPalette3D {
     // MARK: - Material Helpers
 
     /// Creates a physically-based material that looks like colored liquid.
-    /// Slightly glossy, moderately saturated, non-metallic.
+    /// Slightly glossy, saturated, non-metallic.
     static func liquidMaterial(for groupId: Int) -> PhysicallyBasedMaterial {
         let rgba = color(for: groupId)
         var material = PhysicallyBasedMaterial()
@@ -51,28 +51,43 @@ enum ColorPalette3D {
             blue: CGFloat(rgba.z),
             alpha: 1.0
         ))
-        material.roughness = .init(floatLiteral: 0.3)
+        material.roughness = .init(floatLiteral: 0.25)
         material.metallic = .init(floatLiteral: 0.0)
         return material
     }
 
-    /// A translucent glass-like material for the tube walls.
+    /// A translucent glass material with a subtle blue tint.
+    /// Opacity tuned so the bottle silhouette is clearly visible
+    /// while liquid colors show through.
     static func glassMaterial() -> PhysicallyBasedMaterial {
         var material = PhysicallyBasedMaterial()
-        material.baseColor = .init(tint: .init(white: 0.92, alpha: 0.15))
+        material.baseColor = .init(tint: .init(
+            red: 0.70, green: 0.78, blue: 0.88, alpha: 0.35
+        ))
         material.roughness = .init(floatLiteral: 0.05)
         material.metallic = .init(floatLiteral: 0.0)
-        material.blending = .transparent(opacity: .init(floatLiteral: 0.18))
+        material.blending = .transparent(opacity: .init(floatLiteral: 0.28))
         return material
     }
 
-    /// A slightly more visible material for tube rims / outlines.
+    /// A brighter material for tube rims / inner edge details.
     static func glassRimMaterial() -> PhysicallyBasedMaterial {
         var material = PhysicallyBasedMaterial()
-        material.baseColor = .init(tint: .init(white: 0.95, alpha: 0.6))
+        material.baseColor = .init(tint: .init(white: 0.92, alpha: 0.7))
         material.roughness = .init(floatLiteral: 0.1)
         material.metallic = .init(floatLiteral: 0.1)
-        material.blending = .transparent(opacity: .init(floatLiteral: 0.45))
+        material.blending = .transparent(opacity: .init(floatLiteral: 0.55))
+        return material
+    }
+
+    /// A dark gray metallic material for the bottle cap/rim at the top.
+    static func capMaterial() -> PhysicallyBasedMaterial {
+        var material = PhysicallyBasedMaterial()
+        material.baseColor = .init(tint: .init(
+            red: 0.35, green: 0.38, blue: 0.42, alpha: 1.0
+        ))
+        material.roughness = .init(floatLiteral: 0.4)
+        material.metallic = .init(floatLiteral: 0.3)
         return material
     }
 }
