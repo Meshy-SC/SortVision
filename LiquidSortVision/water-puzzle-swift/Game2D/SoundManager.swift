@@ -1,7 +1,7 @@
 import AVFoundation
 import Foundation
 
-/// Sound effect identifiers matching the original Unity audio clips.
+/// Sound effect identifiers matching the original audio clips.
 ///
 /// Each case maps to an audio file in the app bundle via its `rawValue` and `fileExtension`.
 enum GameSound: String, CaseIterable, Sendable {
@@ -18,28 +18,24 @@ enum GameSound: String, CaseIterable, Sendable {
         }
     }
 
-    /// Complete filename including extension (e.g., `"pop_sound_effect.mp3"`).
+    /// Complete filename including extension.
     var fileName: String {
         "\(rawValue).\(fileExtension)"
     }
 }
 
-/// Sound manager for the RealityKit 3D scene.
-///
-/// Replaces `SoundManager` (which depends on SpriteKit's `SKAction`).
-/// Uses `AVAudioPlayer` for fire-and-forget sound playback without any
-/// SpriteKit dependency.
+/// Sound manager using AVAudioPlayer for fire-and-forget playback.
 ///
 /// ## Usage
 /// ```swift
-/// SoundManager3D.shared.play(.pop)
+/// SoundManager.shared.play(.pop)
 /// ```
 @MainActor
-final class SoundManager3D {
+final class SoundManager {
 
     // MARK: - Singleton
 
-    static let shared = SoundManager3D()
+    static let shared = SoundManager()
 
     // MARK: - Cached Players
 
@@ -51,7 +47,7 @@ final class SoundManager3D {
 
     // MARK: - Sound Preference
 
-    /// Whether sound effects are enabled (reads same UserDefaults key as SoundManager).
+    /// Whether sound effects are enabled (reads same UserDefaults key as GameManager).
     var soundEnabled: Bool {
         UserDefaults.standard.bool(forKey: GameManager.soundEnabledKey)
     }
@@ -59,7 +55,6 @@ final class SoundManager3D {
     // MARK: - Init
 
     private init() {
-        // Pre-load all sound data for instant playback
         for sound in GameSound.allCases {
             if let url = Bundle.main.url(
                 forResource: sound.rawValue,
@@ -83,7 +78,6 @@ final class SoundManager3D {
             player.prepareToPlay()
             player.play()
 
-            // Keep reference alive, clean up after playback
             activePlayers.append(player)
             Task { @MainActor [weak self] in
                 try? await Task.sleep(for: .seconds(player.duration + 0.5))

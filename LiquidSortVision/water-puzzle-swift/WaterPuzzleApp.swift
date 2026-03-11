@@ -23,9 +23,6 @@ struct WaterPuzzleApp: App {
             CommandGroup(replacing: .newItem) {}
         }
         #endif
-        #if os(visionOS)
-        .defaultSize(width: 750, height: 1000)
-        #endif
     }
 }
 
