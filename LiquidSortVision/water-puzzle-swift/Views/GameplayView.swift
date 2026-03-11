@@ -2,7 +2,7 @@ import SwiftUI
 
 /// Gameplay screen — native toolbar-based HUD with system background.
 ///
-/// Uses a standard `toolbar` for Home/Restart controls. The 2D game
+/// Uses a standard `toolbar` for Home/Restart controls. The game
 /// scene fills the available space.
 struct GameplayView: View {
     let gameMode: GameMode
@@ -16,7 +16,7 @@ struct GameplayView: View {
 
     var body: some View {
         ZStack {
-            // 2D game scene
+            // Game scene
             if let engine {
                 GameSceneView(engine: engine)
                     .padding()

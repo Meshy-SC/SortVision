@@ -70,7 +70,7 @@ final class TubeState: Identifiable {
     }
 }
 
-/// Central game engine for the 2D puzzle.
+/// Central game engine for the puzzle.
 ///
 /// Manages tube states, selection, pour logic, and win detection.
 /// Communicates results back to SwiftUI via closures.

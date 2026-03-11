@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// A 2D tube (bottle) that displays liquid segments as stacked colored rectangles.
+/// A tube (bottle) view that displays liquid segments as stacked colored rectangles.
 ///
 /// The tube is drawn with a rounded-rectangle glass outline and filled
 /// liquid segments that stack from bottom to top. When selected (pending),
@@ -82,7 +82,9 @@ struct TubeView: View {
         VStack(spacing: 0) {
             Spacer(minLength: 0)
 
-            ForEach(tube.liquids) { liquid in
+            // liquids array is bottom-to-top; VStack renders top-to-bottom,
+            // so reverse to place the bottom liquid at the visual bottom.
+            ForEach(Array(tube.liquids.enumerated().reversed()), id: \.element.id) { _, liquid in
                 ColorPalette.color(for: liquid.groupId)
                     .frame(height: Self.unitHeight * liquid.value)
             }

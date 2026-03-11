@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// The main 2D game scene view that lays out tubes in a grid.
+/// The main game scene view that lays out tubes in a grid.
 ///
 /// Displays all tubes in one or two rows depending on count
 /// and handles background taps for deselection.
