@@ -97,13 +97,12 @@ final class GameEngine {
     // MARK: - Configuration
 
     var level: Level?
-    var gameMode: GameMode = .easy
     var reduceMotion: Bool = false
 
     // MARK: - Callbacks
 
     var onLevelComplete: (() -> Void)?
-    var onSaveProgress: ((GameMode, Int) -> Void)?
+    var onSaveProgress: ((Int) -> Void)?
 
     // MARK: - Game State
 
@@ -349,7 +348,7 @@ final class GameEngine {
         SoundManager.shared.play(.win)
 
         if let level {
-            onSaveProgress?(gameMode, level.number)
+            onSaveProgress?(level.number)
         }
 
         Task { @MainActor in

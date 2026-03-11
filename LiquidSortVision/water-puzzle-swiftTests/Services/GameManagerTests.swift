@@ -9,55 +9,76 @@ struct GameManagerTests {
 
     // MARK: - Level Loading
 
-    @Test("Levels load for all game modes from bundle JSON",
-          arguments: GameMode.allCases)
-    func levelsLoadForAllModes(mode: GameMode) {
-        let levels = GameManager.shared.levels(for: mode)
-        #expect(!levels.isEmpty, "\(mode.displayName) should have levels loaded from bundle")
+    @Test("Levels load for stages with content",
+          arguments: [Stage.iron, .bronze, .silver, .gold])
+    func levelsLoadForAvailableStages(stage: Stage) {
+        let levels = GameManager.shared.levels(for: stage)
+        #expect(!levels.isEmpty, "\(stage.displayName) should have levels loaded from bundle")
     }
 
-    @Test("No loading errors for any game mode",
-          arguments: GameMode.allCases)
-    func noLoadingErrors(mode: GameMode) {
-        let error = GameManager.shared.levelLoadingErrors[mode]
-        #expect(error == nil, "Loading \(mode.displayName) should not produce errors")
+    @Test("Stages without content have empty level arrays",
+          arguments: [Stage.platinum, .diamond, .emerald, .ruby, .obsidian, .legend])
+    func noLevelsForUnavailableStages(stage: Stage) {
+        let levels = GameManager.shared.levels(for: stage)
+        #expect(levels.isEmpty, "\(stage.displayName) should have no levels yet")
     }
 
-    @Test("Level numbers are sequential starting from 1",
-          arguments: GameMode.allCases)
-    func levelNumbersSequential(mode: GameMode) {
-        let levels = GameManager.shared.levels(for: mode)
+    @Test("No loading errors for available stages",
+          arguments: [Stage.iron, .bronze, .silver, .gold])
+    func noLoadingErrors(stage: Stage) {
+        let error = GameManager.shared.levelLoadingErrors[stage]
+        #expect(error == nil, "Loading \(stage.displayName) should not produce errors")
+    }
+
+    @Test("Level global numbers are sequential within each stage",
+          arguments: [Stage.iron, .bronze, .silver, .gold])
+    func levelGlobalNumbers(stage: Stage) {
+        let levels = GameManager.shared.levels(for: stage)
+        let range = stage.levelRange
         for (index, level) in levels.enumerated() {
-            #expect(level.number == index + 1,
-                    "\(mode.displayName) level at index \(index) should be number \(index + 1)")
+            let expectedGlobal = range.lowerBound + index
+            #expect(level.number == expectedGlobal,
+                    "\(stage.displayName) level at index \(index) should have global number \(expectedGlobal), got \(level.number)")
         }
     }
 
     // MARK: - Level Queries
 
-    @Test("level(for:number:) returns correct level for valid number")
-    func levelForValidNumber() {
-        let level = GameManager.shared.level(for: .easy, number: 1)
+    @Test("level(globalNumber:) returns correct level for valid number")
+    func levelForValidGlobalNumber() {
+        let level = GameManager.shared.level(globalNumber: 1)
         #expect(level != nil)
         #expect(level?.number == 1)
     }
 
-    @Test("level(for:number:) returns nil for number 0 (below range)")
+    @Test("level(globalNumber:) works across stages")
+    func levelAcrossStages() {
+        // Iron level
+        let ironLevel = GameManager.shared.level(globalNumber: 50)
+        #expect(ironLevel != nil)
+        #expect(ironLevel?.number == 50)
+
+        // Bronze level
+        let bronzeLevel = GameManager.shared.level(globalNumber: 150)
+        #expect(bronzeLevel != nil)
+        #expect(bronzeLevel?.number == 150)
+    }
+
+    @Test("level(globalNumber:) returns nil for number 0 (below range)")
     func levelForZero() {
-        let level = GameManager.shared.level(for: .easy, number: 0)
+        let level = GameManager.shared.level(globalNumber: 0)
         #expect(level == nil)
     }
 
-    @Test("level(for:number:) returns nil for number beyond range")
+    @Test("level(globalNumber:) returns nil for number beyond available levels")
     func levelBeyondRange() {
-        let totalLevels = GameManager.shared.levels(for: .easy).count
-        let level = GameManager.shared.level(for: .easy, number: totalLevels + 1)
+        let level = GameManager.shared.level(globalNumber: 99999)
         #expect(level == nil)
     }
 
-    @Test("level(for:number:) returns nil for negative number")
+    @Test("level(globalNumber:) returns nil for negative number")
     func levelForNegativeNumber() {
-        let level = GameManager.shared.level(for: .easy, number: -1)
+        let level = GameManager.shared.level(globalNumber: -1)
         #expect(level == nil)
     }
 
@@ -65,67 +86,96 @@ struct GameManagerTests {
 
     @Test("Level 1 is never locked (always the entry point)")
     func firstLevelNeverLocked() {
-        // Level 1 is unlocked when completedLevel is 0 (nothing completed)
-        // because 1 > 0 + 1 is false
-        let snapshot = UserDefaultsSnapshot(keys: [GameMode.easy.completionKey])
+        let snapshot = UserDefaultsSnapshot(keys: [GameManager.completionKey])
         defer { snapshot.restore() }
 
-        UserDefaults.standard.set(0, forKey: GameMode.easy.completionKey)
-        // Reload to pick up changes
-        let isLocked = GameManager.shared.isLevelLocked(mode: .easy, number: 1)
+        UserDefaults.standard.set(0, forKey: GameManager.completionKey)
+        GameManager.shared.loadCompletedLevel()
+        let isLocked = GameManager.shared.isLevelLocked(1)
         #expect(!isLocked, "Level 1 should never be locked")
     }
 
     @Test("Completed level + 1 is unlocked, completed + 2 is locked")
     func lockingBoundary() {
-        let snapshot = UserDefaultsSnapshot(keys: [GameMode.normal.completionKey])
+        let snapshot = UserDefaultsSnapshot(keys: [GameManager.completionKey])
         defer { snapshot.restore() }
 
-        // Simulate completing level 5
-        GameManager.shared.completeLevel(mode: .normal, number: 5)
+        GameManager.shared.completeLevel(number: 5)
 
-        // Level 6 should be unlocked (next playable)
-        #expect(!GameManager.shared.isLevelLocked(mode: .normal, number: 6))
-        // Level 7 should be locked
-        #expect(GameManager.shared.isLevelLocked(mode: .normal, number: 7))
-        // Level 5 (already completed) should not be locked
-        #expect(!GameManager.shared.isLevelLocked(mode: .normal, number: 5))
+        #expect(!GameManager.shared.isLevelLocked(6))
+        #expect(GameManager.shared.isLevelLocked(7))
+        #expect(!GameManager.shared.isLevelLocked(5))
+    }
+
+    // MARK: - Stage Accessibility
+
+    @Test("Iron (first stage) is always accessible")
+    func ironAlwaysAccessible() {
+        #expect(GameManager.shared.isStageAccessible(.iron))
+    }
+
+    @Test("Unavailable stages are never accessible")
+    func unavailableStagesNotAccessible() {
+        #expect(!GameManager.shared.isStageAccessible(.platinum))
+        #expect(!GameManager.shared.isStageAccessible(.legend))
+    }
+
+    // MARK: - Completed Count In Stage
+
+    @Test("completedCountInStage returns correct count")
+    func completedCountInStage() {
+        let snapshot = UserDefaultsSnapshot(keys: [GameManager.completionKey])
+        defer { snapshot.restore() }
+
+        GameManager.shared.completeLevel(number: 50)
+        #expect(GameManager.shared.completedCountInStage(.iron) == 50)
+        #expect(GameManager.shared.completedCountInStage(.bronze) == 0)
+    }
+
+    @Test("completedCountInStage caps at levelsPerStage for completed stages")
+    func completedCountCapped() {
+        let snapshot = UserDefaultsSnapshot(keys: [GameManager.completionKey])
+        defer { snapshot.restore() }
+
+        GameManager.shared.completeLevel(number: 150)
+        #expect(GameManager.shared.completedCountInStage(.iron) == 100)
+        #expect(GameManager.shared.completedCountInStage(.bronze) == 50)
     }
 
     // MARK: - Level Completion
 
     @Test("completeLevel advances progress for higher level numbers")
     func completeLevelAdvancesProgress() {
-        let snapshot = UserDefaultsSnapshot(keys: [GameMode.hard.completionKey])
+        let snapshot = UserDefaultsSnapshot(keys: [GameManager.completionKey])
         defer { snapshot.restore() }
 
-        // Reset progress
-        UserDefaults.standard.set(0, forKey: GameMode.hard.completionKey)
-        GameManager.shared.completeLevel(mode: .hard, number: 3)
+        UserDefaults.standard.set(0, forKey: GameManager.completionKey)
+        GameManager.shared.loadCompletedLevel()
+        GameManager.shared.completeLevel(number: 3)
 
-        #expect(GameManager.shared.completedLevel(for: .hard) == 3)
+        #expect(GameManager.shared.completedLevel == 3)
     }
 
     @Test("completeLevel does not regress progress for lower level numbers")
     func completeLevelDoesNotRegress() {
-        let snapshot = UserDefaultsSnapshot(keys: [GameMode.hard.completionKey])
+        let snapshot = UserDefaultsSnapshot(keys: [GameManager.completionKey])
         defer { snapshot.restore() }
 
-        GameManager.shared.completeLevel(mode: .hard, number: 10)
-        GameManager.shared.completeLevel(mode: .hard, number: 5)
+        GameManager.shared.completeLevel(number: 10)
+        GameManager.shared.completeLevel(number: 5)
 
-        #expect(GameManager.shared.completedLevel(for: .hard) >= 10,
+        #expect(GameManager.shared.completedLevel >= 10,
                 "Completing a lower level should not reduce progress")
     }
 
     @Test("completeLevel persists to UserDefaults")
     func completeLevelPersists() {
-        let snapshot = UserDefaultsSnapshot(keys: [GameMode.expert.completionKey])
+        let snapshot = UserDefaultsSnapshot(keys: [GameManager.completionKey])
         defer { snapshot.restore() }
 
-        GameManager.shared.completeLevel(mode: .expert, number: 7)
+        GameManager.shared.completeLevel(number: 7)
 
-        let persisted = UserDefaults.standard.integer(forKey: GameMode.expert.completionKey)
+        let persisted = UserDefaults.standard.integer(forKey: GameManager.completionKey)
         #expect(persisted == 7)
     }
 
@@ -133,16 +183,14 @@ struct GameManagerTests {
 
     @Test("hasNextLevel returns true when more levels exist")
     func hasNextLevelTrue() {
-        let totalLevels = GameManager.shared.levels(for: .easy).count
-        guard totalLevels > 1 else { return }
-
-        #expect(GameManager.shared.hasNextLevel(mode: .easy, after: 1))
+        #expect(GameManager.shared.hasNextLevel(after: 1))
     }
 
-    @Test("hasNextLevel returns false for the last level")
+    @Test("hasNextLevel returns false beyond available content")
     func hasNextLevelFalseAtEnd() {
-        let totalLevels = GameManager.shared.levels(for: .easy).count
-        #expect(!GameManager.shared.hasNextLevel(mode: .easy, after: totalLevels))
+        let totalLevels = [Stage.iron, .bronze, .silver, .gold]
+            .reduce(0) { $0 + GameManager.shared.levels(for: $1).count }
+        #expect(!GameManager.shared.hasNextLevel(after: totalLevels))
     }
 
     // MARK: - Sound Preference

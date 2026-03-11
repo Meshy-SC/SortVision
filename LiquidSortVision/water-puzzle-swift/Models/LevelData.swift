@@ -30,8 +30,9 @@ struct LevelGroup: Codable, Sendable {
 /// ## Hashable Conformance
 /// Required for `NavigationPath` routing. Auto-synthesized from `no` and `map`.
 struct Level: Codable, Sendable, Identifiable, Hashable {
-    /// 1-based level number, unique within its game mode.
-    let number: Int
+    /// Global 1-based level number (1–1000), unique across all stages.
+    /// Assigned during loading by `GameManager` after renumbering from per-file local numbers.
+    var number: Int
 
     /// Array of tube columns defining the initial puzzle state.
     let columns: [LevelColumn]

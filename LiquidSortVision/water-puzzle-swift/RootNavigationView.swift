@@ -7,7 +7,7 @@ import SwiftUI
 ///
 /// ## Navigation Flow
 /// ```
-/// DifficultySelection (root) → LevelGrid → Gameplay
+/// StageSelection (root) → LevelGrid → Gameplay
 /// ```
 ///
 /// Route definitions live in `Navigation/AppScreen.swift`.
@@ -22,13 +22,13 @@ struct RootNavigationView: View {
 
     var body: some View {
         NavigationStack(path: $path) {
-            DifficultySelectionView()
+            StageSelectionView()
                 .navigationDestination(for: AppScreen.self) { screen in
                     switch screen {
-                    case .levelGrid(let mode):
-                        LevelGridView(path: $path, gameMode: mode)
-                    case .gameplay(let mode, let level):
-                        GameplayView(gameMode: mode, level: level, path: $path)
+                    case .levelGrid(let stage):
+                        LevelGridView(path: $path, stage: stage)
+                    case .gameplay(let stage, let level):
+                        GameplayView(stage: stage, level: level, path: $path)
                     }
                 }
         }
@@ -36,7 +36,7 @@ struct RootNavigationView: View {
         .onOpenURL { url in
             handleDeepLink(url)
         }
-        .onChange(of: deepLinkManager.pendingLevel?.number) { _, _ in
+        .onChange(of: deepLinkManager.pendingLevel) { _, _ in
             handlePendingDeepLink()
         }
         .onAppear {
@@ -46,41 +46,40 @@ struct RootNavigationView: View {
 
     // MARK: - Deep Link Handling
 
-    /// Handles `waterpuzzle://play?mode=0&level=5` URLs from widgets.
+    /// Handles `waterpuzzle://play?level=5` URLs from widgets.
     private func handleDeepLink(_ url: URL) {
         guard url.scheme == "waterpuzzle",
               url.host == "play",
               let components = URLComponents(url: url, resolvingAgainstBaseURL: false),
-              let modeStr = components.queryItems?.first(where: { $0.name == "mode" })?.value,
-              let modeRaw = Int(modeStr),
-              let mode = GameMode(rawValue: modeRaw),
               let levelStr = components.queryItems?.first(where: { $0.name == "level" })?.value,
               let levelNum = Int(levelStr),
-              let level = gameManager.level(for: mode, number: levelNum),
-              !gameManager.isLevelLocked(mode: mode, number: levelNum)
+              let stage = Stage.stage(for: levelNum),
+              let level = gameManager.level(globalNumber: levelNum),
+              !gameManager.isLevelLocked(levelNum)
         else { return }
 
-        navigateToLevel(mode: mode, level: level)
+        navigateToLevel(stage: stage, level: level)
     }
 
     /// Handles navigation requests from App Intents via `DeepLinkManager`.
     private func handlePendingDeepLink() {
-        guard let pending = deepLinkManager.pendingLevel,
-              let level = gameManager.level(for: pending.mode, number: pending.number)
+        guard let globalNumber = deepLinkManager.pendingLevel,
+              let stage = Stage.stage(for: globalNumber),
+              let level = gameManager.level(globalNumber: globalNumber)
         else { return }
 
         deepLinkManager.pendingLevel = nil
-        navigateToLevel(mode: pending.mode, level: level)
+        navigateToLevel(stage: stage, level: level)
     }
 
     /// Navigates the stack to a specific gameplay level.
-    private func navigateToLevel(mode: GameMode, level: Level) {
+    private func navigateToLevel(stage: Stage, level: Level) {
         // Clear existing stack and push the full navigation path
         path = NavigationPath()
         Task {
             try? await Task.sleep(for: .milliseconds(100))
-            path.append(AppScreen.levelGrid(mode))
-            path.append(AppScreen.gameplay(mode, level))
+            path.append(AppScreen.levelGrid(stage))
+            path.append(AppScreen.gameplay(stage, level))
         }
     }
 }

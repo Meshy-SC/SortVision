@@ -5,17 +5,16 @@ import WidgetKit
 /// Central game state manager responsible for level data and progress tracking.
 ///
 /// ## Responsibilities
-/// - Loads and caches level JSON data for all game modes (Easy, Normal, Hard, Expert)
-/// - Tracks per-mode level completion progress via `UserDefaults`
+/// - Loads and caches level JSON data for all available stages
+/// - Assigns global level numbers (1–400+) across stages
+/// - Tracks sequential level completion progress via `UserDefaults`
+/// - Migrates legacy per-difficulty progress to the new global system
 /// - Manages the sound-enabled preference
 ///
 /// ## Architecture Notes
 /// - Uses the Observation framework (`@Observable`) for SwiftUI integration
 /// - Injected into the SwiftUI view hierarchy via `@Environment`
-/// - Singleton `shared` instance maintained for backward compatibility with SpriteKit layer
-///
-/// ## Unity Equivalent
-/// Mirrors Unity's `ResourceManager` (level loading) + `GameManager` (progress tracking).
+/// - Singleton `shared` instance for backward compatibility
 @MainActor @Observable
 final class GameManager {
 
@@ -26,28 +25,27 @@ final class GameManager {
     // MARK: - Constants
 
     /// UserDefaults key for the sound-enabled preference.
-    /// Both `GameManager` and `SoundManager` independently use this key,
-    /// keeping the UI toggle and audio playback in sync without coupling.
     static let soundEnabledKey = "soundEnabled"
+
+    /// UserDefaults key for the highest completed global level number.
+    static let completionKey = "globalLevelCompleted"
 
     // MARK: - Level Cache
 
-    /// Cached level data indexed by game mode, loaded once at initialization.
-    private var levelCache: [GameMode: [Level]] = [:]
+    /// Cached level data indexed by stage, loaded once at initialization.
+    /// Levels within each stage are renumbered with global numbers.
+    private var stageLevels: [Stage: [Level]] = [:]
 
     /// Stores any errors encountered during level loading for diagnostics.
-    private(set) var levelLoadingErrors: [GameMode: Error] = [:]
+    private(set) var levelLoadingErrors: [Stage: Error] = [:]
 
     // MARK: - Observable State
 
-    /// Tracks the highest completed level number per game mode.
-    /// Dictionary mutation triggers SwiftUI view updates via Observation.
-    private(set) var completedLevels: [GameMode: Int] = [:]
+    /// Highest completed global level number (0 if none).
+    /// Drives level locking, stage accessibility, and progress display.
+    private(set) var completedLevel: Int = 0
 
     /// Sound on/off toggle, persisted to UserDefaults.
-    ///
-    /// `SoundManager` reads the same UserDefaults key directly, so changes
-    /// here are immediately reflected in audio playback without direct coupling.
     var soundEnabled: Bool = true {
         didSet {
             UserDefaults.standard.set(soundEnabled, forKey: Self.soundEnabledKey)
@@ -63,96 +61,147 @@ final class GameManager {
         }
         soundEnabled = UserDefaults.standard.bool(forKey: Self.soundEnabledKey)
 
+        migrateFromLegacyProgress()
         loadAllLevels()
-        loadCompletedLevels()
+        loadCompletedLevel()
+    }
+
+    // MARK: - Legacy Migration
+
+    /// Migrates from the old per-difficulty progress system (Easy/Normal/Hard/Expert)
+    /// to the new single global level progression.
+    ///
+    /// Old keys: `"easy_Level_Complete"`, `"normal_Level_Complete"`, etc.
+    /// Maps completed counts to global level numbers:
+    /// Easy 1–100 → Global 1–100, Normal 1–100 → Global 101–200, etc.
+    private func migrateFromLegacyProgress() {
+        guard !UserDefaults.standard.bool(forKey: "stage_progress_migrated") else { return }
+
+        let legacyModes: [(key: String, offset: Int)] = [
+            ("easy_Level_Complete", 0),
+            ("normal_Level_Complete", 100),
+            ("hard_Level_Complete", 200),
+            ("expert_Level_Complete", 300),
+        ]
+
+        var maxGlobal = 0
+        for (key, offset) in legacyModes {
+            let completed = UserDefaults.standard.integer(forKey: key)
+            if completed > 0 {
+                maxGlobal = max(maxGlobal, offset + completed)
+            }
+        }
+
+        if maxGlobal > 0 {
+            UserDefaults.standard.set(maxGlobal, forKey: Self.completionKey)
+        }
+
+        UserDefaults.standard.set(true, forKey: "stage_progress_migrated")
     }
 
     // MARK: - Level Loading
 
-    /// Loads level JSON files for all game modes from the app bundle.
+    /// Loads level JSON files for all available stages from the app bundle.
     ///
-    /// Each mode maps to a JSON resource file (e.g., `.easy` → `levels.json`).
-    /// Loading errors are captured per-mode in `levelLoadingErrors` for diagnostics
-    /// rather than crashing the app.
+    /// Each stage with a `levelResourceName` maps to a JSON file. After decoding,
+    /// levels are renumbered with global numbers (e.g., Iron levels 1–100 stay as-is,
+    /// Bronze levels become 101–200, etc.).
     private func loadAllLevels() {
-        for mode in GameMode.allCases {
+        for stage in Stage.allCases {
+            guard let resourceName = stage.levelResourceName else { continue }
+
             do {
-                let levels = try loadLevels(for: mode)
-                levelCache[mode] = levels
+                var levels = try loadLevels(resource: resourceName)
+                let offset = stage.rawValue * Stage.levelsPerStage
+                for i in levels.indices {
+                    levels[i].number = offset + levels[i].number
+                }
+                stageLevels[stage] = levels
             } catch {
-                levelLoadingErrors[mode] = error
-                levelCache[mode] = []
+                levelLoadingErrors[stage] = error
+                stageLevels[stage] = []
             }
         }
     }
 
-    /// Loads and decodes levels for a single game mode.
+    /// Loads and decodes levels from a single JSON resource file.
     ///
-    /// - Parameter mode: The game mode whose levels to load.
-    /// - Returns: Array of decoded `Level` objects.
+    /// - Parameter resource: The JSON resource filename (without extension).
+    /// - Returns: Array of decoded `Level` objects with local numbering.
     /// - Throws: `LevelLoadingError` if the resource is missing or malformed.
-    private func loadLevels(for mode: GameMode) throws -> [Level] {
-        guard let url = Bundle.main.url(forResource: mode.levelResourceName, withExtension: "json") else {
-            throw LevelLoadingError.resourceNotFound(mode.levelResourceName)
+    private func loadLevels(resource: String) throws -> [Level] {
+        guard let url = Bundle.main.url(forResource: resource, withExtension: "json") else {
+            throw LevelLoadingError.resourceNotFound(resource)
         }
 
         let data: Data
         do {
             data = try Data(contentsOf: url)
         } catch {
-            throw LevelLoadingError.fileReadFailed(mode.levelResourceName, error.localizedDescription)
+            throw LevelLoadingError.fileReadFailed(resource, error.localizedDescription)
         }
 
         do {
             let group = try JSONDecoder().decode(LevelGroup.self, from: data)
             return group.levels
         } catch {
-            throw LevelLoadingError.decodingFailed(mode.levelResourceName, error.localizedDescription)
+            throw LevelLoadingError.decodingFailed(resource, error.localizedDescription)
         }
     }
 
-    /// Restores completed level progress from UserDefaults for all modes.
-    private func loadCompletedLevels() {
-        for mode in GameMode.allCases {
-            completedLevels[mode] = UserDefaults.standard.integer(forKey: mode.completionKey)
-        }
+    /// Restores completed level progress from UserDefaults.
+    func loadCompletedLevel() {
+        completedLevel = UserDefaults.standard.integer(forKey: Self.completionKey)
     }
 
     // MARK: - Level Queries
 
-    /// Returns all levels for the given game mode.
-    func levels(for mode: GameMode) -> [Level] {
-        levelCache[mode] ?? []
+    /// Returns all levels for the given stage.
+    func levels(for stage: Stage) -> [Level] {
+        stageLevels[stage] ?? []
     }
 
-    /// Returns a specific level by its 1-based number within a game mode.
+    /// Returns a specific level by its global number.
     ///
-    /// - Parameters:
-    ///   - mode: The game mode.
-    ///   - number: The 1-based level number.
+    /// - Parameter globalNumber: The 1-based global level number.
     /// - Returns: The level if found, `nil` otherwise.
-    func level(for mode: GameMode, number: Int) -> Level? {
-        let allLevels = levels(for: mode)
-        guard number >= 1, number <= allLevels.count else { return nil }
-        return allLevels[number - 1]
+    func level(globalNumber: Int) -> Level? {
+        guard let stage = Stage.stage(for: globalNumber) else { return nil }
+        let levels = self.levels(for: stage)
+        let localIndex = globalNumber - stage.levelRange.lowerBound
+        guard localIndex >= 0, localIndex < levels.count else { return nil }
+        return levels[localIndex]
     }
 
-    /// Returns the highest completed level number for the given mode (0 if none).
-    func completedLevel(for mode: GameMode) -> Int {
-        completedLevels[mode] ?? 0
+    /// Returns the number of completed levels within a specific stage.
+    func completedCountInStage(_ stage: Stage) -> Int {
+        let range = stage.levelRange
+        if completedLevel < range.lowerBound {
+            return 0
+        }
+        return min(completedLevel - range.lowerBound + 1, Stage.levelsPerStage)
     }
 
     /// Checks whether a level is locked (not yet reachable by the player).
     ///
-    /// A level is locked if its number exceeds the next playable level
-    /// (i.e., `number > completedLevel + 1`).
-    func isLevelLocked(mode: GameMode, number: Int) -> Bool {
-        number > completedLevel(for: mode) + 1
+    /// A level is locked if its global number exceeds the next playable level
+    /// (i.e., `globalNumber > completedLevel + 1`).
+    func isLevelLocked(_ globalNumber: Int) -> Bool {
+        globalNumber > completedLevel + 1
     }
 
-    /// Checks whether a next level exists after the given level number.
-    func hasNextLevel(mode: GameMode, after number: Int) -> Bool {
-        levels(for: mode).count > number
+    /// Checks whether a stage is accessible to the player.
+    ///
+    /// A stage is accessible if it has content and the player has reached
+    /// at least its first level (i.e., completed the previous stage or it's Iron).
+    func isStageAccessible(_ stage: Stage) -> Bool {
+        guard stage.isAvailable else { return false }
+        return completedLevel >= stage.levelRange.lowerBound - 1
+    }
+
+    /// Checks whether a next level exists after the given global level number.
+    func hasNextLevel(after globalNumber: Int) -> Bool {
+        level(globalNumber: globalNumber + 1) != nil
     }
 
     // MARK: - Level Completion
@@ -162,14 +211,11 @@ final class GameManager {
     /// Only updates if `number` exceeds the current highest completed level,
     /// preventing regression of progress.
     ///
-    /// - Parameters:
-    ///   - mode: The game mode the level belongs to.
-    ///   - number: The 1-based level number that was completed.
-    func completeLevel(mode: GameMode, number: Int) {
-        let current = completedLevel(for: mode)
-        if number > current {
-            completedLevels[mode] = number
-            UserDefaults.standard.set(number, forKey: mode.completionKey)
+    /// - Parameter number: The global level number that was completed.
+    func completeLevel(number: Int) {
+        if number > completedLevel {
+            completedLevel = number
+            UserDefaults.standard.set(number, forKey: Self.completionKey)
 
             // Update Home Screen widget with latest progress
             WidgetCenter.shared.reloadAllTimelines()
@@ -181,8 +227,8 @@ final class GameManager {
 
 /// Errors that can occur during level data loading.
 ///
-/// Captured per-mode in `GameManager.levelLoadingErrors` for diagnostics
-/// without crashing the app when a single mode's data is unavailable.
+/// Captured per-stage in `GameManager.levelLoadingErrors` for diagnostics
+/// without crashing the app when a single stage's data is unavailable.
 enum LevelLoadingError: LocalizedError, Sendable {
     /// The JSON resource file was not found in the app bundle.
     case resourceNotFound(String)

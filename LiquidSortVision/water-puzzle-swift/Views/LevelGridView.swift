@@ -7,13 +7,13 @@ import SwiftUI
 struct LevelGridView: View {
     @Environment(GameManager.self) private var gameManager
     @Binding var path: NavigationPath
-    let gameMode: GameMode
+    let stage: Stage
 
     private let columns = Array(repeating: GridItem(.flexible(), spacing: 12), count: 5)
 
     var body: some View {
         Group {
-            if let error = gameManager.levelLoadingErrors[gameMode] {
+            if let error = gameManager.levelLoadingErrors[stage] {
                 ContentUnavailableView {
                     Label("Levels Unavailable", systemImage: "exclamationmark.triangle.fill")
                 } description: {
@@ -27,16 +27,15 @@ struct LevelGridView: View {
             } else {
                 ScrollView {
                     LazyVGrid(columns: columns, spacing: 12) {
-                        let levels = gameManager.levels(for: gameMode)
+                        let levels = gameManager.levels(for: stage)
                         ForEach(levels) { level in
+                            let displayNumber = Stage.localLevelNumber(for: level.number)
                             LevelTileView(
-                                levelNumber: level.number,
-                                isLocked: gameManager.isLevelLocked(
-                                    mode: gameMode, number: level.number),
-                                isCompleted: level.number <= gameManager.completedLevel(
-                                    for: gameMode)
+                                levelNumber: displayNumber,
+                                isLocked: gameManager.isLevelLocked(level.number),
+                                isCompleted: level.number <= gameManager.completedLevel
                             ) {
-                                path.append(AppScreen.gameplay(gameMode, level))
+                                path.append(AppScreen.gameplay(stage, level))
                             }
                         }
                     }
@@ -45,7 +44,7 @@ struct LevelGridView: View {
                 }
             }
         }
-        .navigationTitle("\(gameMode.displayName)")
+        .navigationTitle(stage.displayName)
         #if os(iOS)
         .navigationBarTitleDisplayMode(.large)
         #endif

@@ -5,7 +5,7 @@ import SwiftUI
 /// Uses a standard `toolbar` for Home/Restart controls. The game
 /// scene fills the available space.
 struct GameplayView: View {
-    let gameMode: GameMode
+    let stage: Stage
     let level: Level
     @Binding var path: NavigationPath
     @Environment(GameManager.self) private var gameManager
@@ -14,13 +14,17 @@ struct GameplayView: View {
     @State private var engine: GameEngine?
     @State private var showLevelComplete = false
 
+    private var localNumber: Int {
+        Stage.localLevelNumber(for: level.number)
+    }
+
     var body: some View {
         ZStack {
             // Game scene
             if let engine {
                 GameSceneView(engine: engine)
                     .padding()
-                    .accessibilityLabel("Water sort puzzle, level \(level.number)")
+                    .accessibilityLabel("Water sort puzzle, \(stage.displayName) level \(localNumber)")
                     .accessibilityHint("Tap tubes to select and pour water between them")
             } else {
                 ProgressView("Loading…")
@@ -30,8 +34,8 @@ struct GameplayView: View {
             // Level complete overlay
             if showLevelComplete {
                 LevelCompletionOverlay(
-                    gameMode: gameMode,
-                    levelNumber: level.number,
+                    stage: stage,
+                    level: level,
                     path: $path
                 )
                 .transition(
@@ -45,7 +49,7 @@ struct GameplayView: View {
             reduceMotion ? .none : .spring(.bouncy),
             value: showLevelComplete
         )
-        .navigationTitle("Level \(level.number)")
+        .navigationTitle("\(stage.displayName) • Level \(localNumber)")
         .navigationBarBackButtonHidden(true)
         #if os(iOS)
         .navigationBarTitleDisplayMode(.inline)
@@ -85,14 +89,13 @@ struct GameplayView: View {
     private func createEngine() {
         let gameEngine = GameEngine()
         gameEngine.level = level
-        gameEngine.gameMode = gameMode
         gameEngine.reduceMotion = reduceMotion
 
         gameEngine.onLevelComplete = {
             showLevelComplete = true
         }
-        gameEngine.onSaveProgress = { mode, number in
-            gameManager.completeLevel(mode: mode, number: number)
+        gameEngine.onSaveProgress = { levelNumber in
+            gameManager.completeLevel(number: levelNumber)
         }
 
         gameEngine.setup()

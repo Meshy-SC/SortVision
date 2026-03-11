@@ -7,50 +7,65 @@ import Foundation
 /// (using the same keys as `GameManager`).
 ///
 /// ## Usage
-/// Used by `WaterPuzzleWidget` to display the next playable level per difficulty.
+/// Used by `WaterPuzzleWidget` to display the next playable level and current stage.
 ///
 /// ## Note
 /// If you later adopt App Groups for cross-process data sharing,
 /// update the `UserDefaults` suite here and in `GameManager`.
 enum WidgetDataProvider {
-    /// Returns the highest completed level number for the given mode.
-    /// Reads from the same UserDefaults keys used by `GameManager`.
-    static func completedLevel(for mode: GameMode) -> Int {
-        UserDefaults.standard.integer(forKey: mode.completionKey)
+
+    /// Returns the highest completed global level number.
+    /// Reads from the same UserDefaults key used by `GameManager`.
+    static func completedLevel() -> Int {
+        UserDefaults.standard.integer(forKey: GameManager.completionKey)
     }
 
-    /// Returns the next playable level number (completed + 1).
-    static func nextLevelNumber(for mode: GameMode) -> Int {
-        completedLevel(for: mode) + 1
+    /// Returns the next playable global level number (completed + 1).
+    static func nextLevelNumber() -> Int {
+        completedLevel() + 1
     }
 
-    /// Summary data for a single difficulty, used by the widget.
-    struct DifficultyProgress: Sendable {
-        let mode: GameMode
+    /// Returns the stage the player is currently in.
+    static func currentStage() -> Stage {
+        let completed = completedLevel()
+        if completed == 0 { return .iron }
+        return Stage.stage(for: completed) ?? .iron
+    }
+
+    /// Summary data for the player's overall game progress, used by the widget.
+    struct GameProgress: Sendable {
         let completedCount: Int
+        let currentStage: Stage
         let nextLevel: Int
-        let totalLevels: Int
 
-        var isAllComplete: Bool { completedCount >= totalLevels }
+        /// Whether all currently available levels are completed.
+        var isAllComplete: Bool {
+            let totalAvailable = Stage.allCases
+                .filter(\.isAvailable)
+                .count * Stage.levelsPerStage
+            return completedCount >= totalAvailable
+        }
 
-        /// Progress ratio from 0.0 to 1.0.
-        var progress: Double {
-            guard totalLevels > 0 else { return 0 }
-            return Double(completedCount) / Double(totalLevels)
+        /// Number of completed levels within the current stage.
+        var stageCompletedCount: Int {
+            let range = currentStage.levelRange
+            if completedCount < range.lowerBound { return 0 }
+            return min(completedCount - range.lowerBound + 1, Stage.levelsPerStage)
+        }
+
+        /// Progress within the current stage from 0.0 to 1.0.
+        var stageProgress: Double {
+            Double(stageCompletedCount) / Double(Stage.levelsPerStage)
         }
     }
 
-    /// Returns progress data for a given mode.
-    ///
-    /// `totalLevels` is provided as a parameter since the widget cannot
-    /// decode the level JSON files from the main bundle easily.
-    static func progress(for mode: GameMode, totalLevels: Int) -> DifficultyProgress {
-        let completed = completedLevel(for: mode)
-        return DifficultyProgress(
-            mode: mode,
+    /// Returns progress data for the player's current game state.
+    static func progress() -> GameProgress {
+        let completed = completedLevel()
+        return GameProgress(
             completedCount: completed,
-            nextLevel: completed + 1,
-            totalLevels: totalLevels
+            currentStage: currentStage(),
+            nextLevel: completed + 1
         )
     }
 }

@@ -8,21 +8,19 @@ struct WidgetDataProviderTests {
 
     // MARK: - Completed Level
 
-    @Test("completedLevel reads from UserDefaults",
-          arguments: GameMode.allCases)
-    func completedLevelReadsDefaults(mode: GameMode) {
-        let snapshot = UserDefaultsSnapshot(keys: [mode.completionKey])
+    @Test("completedLevel reads from UserDefaults")
+    func completedLevelReadsDefaults() {
+        let snapshot = UserDefaultsSnapshot(keys: [GameManager.completionKey])
         defer { snapshot.restore() }
 
-        UserDefaults.standard.set(15, forKey: mode.completionKey)
-        #expect(WidgetDataProvider.completedLevel(for: mode) == 15)
+        UserDefaults.standard.set(15, forKey: GameManager.completionKey)
+        #expect(WidgetDataProvider.completedLevel() == 15)
     }
 
     @Test("completedLevel returns 0 when no progress saved")
     func completedLevelDefaultsToZero() {
         let key = "test_nonexistent_completion_key"
         UserDefaults.standard.removeObject(forKey: key)
-        // UserDefaults.integer(forKey:) returns 0 for missing keys
         #expect(UserDefaults.standard.integer(forKey: key) == 0)
     }
 
@@ -31,75 +29,90 @@ struct WidgetDataProviderTests {
     @Test("nextLevelNumber is completedLevel + 1",
           arguments: [0, 1, 5, 99])
     func nextLevelNumber(completed: Int) {
-        let mode = GameMode.easy
-        let snapshot = UserDefaultsSnapshot(keys: [mode.completionKey])
+        let snapshot = UserDefaultsSnapshot(keys: [GameManager.completionKey])
         defer { snapshot.restore() }
 
-        UserDefaults.standard.set(completed, forKey: mode.completionKey)
-        #expect(WidgetDataProvider.nextLevelNumber(for: mode) == completed + 1)
+        UserDefaults.standard.set(completed, forKey: GameManager.completionKey)
+        #expect(WidgetDataProvider.nextLevelNumber() == completed + 1)
     }
 
-    // MARK: - DifficultyProgress
+    // MARK: - Current Stage
 
-    @Test("DifficultyProgress.isAllComplete when completed equals total")
+    @Test("currentStage returns Iron when no progress")
+    func currentStageAtStart() {
+        let snapshot = UserDefaultsSnapshot(keys: [GameManager.completionKey])
+        defer { snapshot.restore() }
+
+        UserDefaults.standard.set(0, forKey: GameManager.completionKey)
+        #expect(WidgetDataProvider.currentStage() == .iron)
+    }
+
+    @Test("currentStage reflects completed progress",
+          arguments: [
+            (50, Stage.iron),
+            (100, .iron),
+            (150, .bronze),
+            (250, .silver),
+            (350, .gold),
+          ] as [(Int, Stage)])
+    func currentStageReflectsProgress(completed: Int, expectedStage: Stage) {
+        let snapshot = UserDefaultsSnapshot(keys: [GameManager.completionKey])
+        defer { snapshot.restore() }
+
+        UserDefaults.standard.set(completed, forKey: GameManager.completionKey)
+        #expect(WidgetDataProvider.currentStage() == expectedStage)
+    }
+
+    // MARK: - GameProgress
+
+    @Test("GameProgress.isAllComplete when all available levels done")
     func isAllCompleteTrue() {
-        let progress = WidgetDataProvider.DifficultyProgress(
-            mode: .easy, completedCount: 100, nextLevel: 101, totalLevels: 100
+        let progress = WidgetDataProvider.GameProgress(
+            completedCount: 400, currentStage: .gold, nextLevel: 401
         )
         #expect(progress.isAllComplete)
     }
 
-    @Test("DifficultyProgress.isAllComplete when completed exceeds total")
-    func isAllCompleteTrueWhenExceeds() {
-        let progress = WidgetDataProvider.DifficultyProgress(
-            mode: .easy, completedCount: 150, nextLevel: 151, totalLevels: 100
-        )
-        #expect(progress.isAllComplete)
-    }
-
-    @Test("DifficultyProgress is not complete when progress remains")
+    @Test("GameProgress is not complete when progress remains")
     func isNotAllComplete() {
-        let progress = WidgetDataProvider.DifficultyProgress(
-            mode: .hard, completedCount: 50, nextLevel: 51, totalLevels: 200
+        let progress = WidgetDataProvider.GameProgress(
+            completedCount: 50, currentStage: .iron, nextLevel: 51
         )
         #expect(!progress.isAllComplete)
     }
 
-    @Test("DifficultyProgress.progress ratio is correct",
+    @Test("GameProgress.stageCompletedCount is correct",
           arguments: [
-            (0, 100, 0.0),
-            (50, 100, 0.5),
-            (100, 100, 1.0),
-            (1, 4, 0.25),
-          ] as [(Int, Int, Double)])
-    func progressRatio(completed: Int, total: Int, expected: Double) {
-        let progress = WidgetDataProvider.DifficultyProgress(
-            mode: .easy, completedCount: completed, nextLevel: completed + 1, totalLevels: total
+            (50, Stage.iron, 50),
+            (100, Stage.iron, 100),
+            (150, Stage.bronze, 50),
+            (0, Stage.iron, 0),
+          ] as [(Int, Stage, Int)])
+    func stageCompletedCount(completed: Int, stage: Stage, expected: Int) {
+        let progress = WidgetDataProvider.GameProgress(
+            completedCount: completed, currentStage: stage, nextLevel: completed + 1
         )
-        #expect(abs(progress.progress - expected) < 0.001)
+        #expect(progress.stageCompletedCount == expected)
     }
 
-    @Test("DifficultyProgress.progress is 0 when totalLevels is 0 (division safety)")
-    func progressZeroDivision() {
-        let progress = WidgetDataProvider.DifficultyProgress(
-            mode: .easy, completedCount: 5, nextLevel: 6, totalLevels: 0
+    @Test("GameProgress.stageProgress ratio is correct")
+    func stageProgressRatio() {
+        let progress = WidgetDataProvider.GameProgress(
+            completedCount: 50, currentStage: .iron, nextLevel: 51
         )
-        #expect(progress.progress == 0)
+        #expect(abs(progress.stageProgress - 0.5) < 0.001)
     }
 
-    @Test("progress(for:totalLevels:) creates correct DifficultyProgress")
+    @Test("progress() factory creates correct GameProgress")
     func progressFactory() {
-        let mode = GameMode.normal
-        let snapshot = UserDefaultsSnapshot(keys: [mode.completionKey])
+        let snapshot = UserDefaultsSnapshot(keys: [GameManager.completionKey])
         defer { snapshot.restore() }
 
-        UserDefaults.standard.set(25, forKey: mode.completionKey)
+        UserDefaults.standard.set(25, forKey: GameManager.completionKey)
 
-        let progress = WidgetDataProvider.progress(for: mode, totalLevels: 200)
-        #expect(progress.mode == .normal)
+        let progress = WidgetDataProvider.progress()
         #expect(progress.completedCount == 25)
         #expect(progress.nextLevel == 26)
-        #expect(progress.totalLevels == 200)
-        #expect(abs(progress.progress - 0.125) < 0.001)
+        #expect(progress.currentStage == .iron)
     }
 }

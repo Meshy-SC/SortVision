@@ -5,30 +5,19 @@ import WidgetKit
 
 /// Timeline provider for the Water Puzzle widget.
 ///
-/// Generates a single entry showing the player's progress across all difficulties.
+/// Generates a single entry showing the player's progress in their current stage.
 /// Refreshes on a 1-hour cadence — actual updates are triggered by
 /// `WidgetCenter.shared.reloadAllTimelines()` when levels are completed.
 struct WaterPuzzleTimelineProvider: TimelineProvider {
-    /// Known total level counts per difficulty.
-    /// These must match the actual level JSON files in the main app bundle.
-    private static let totalLevels: [GameMode: Int] = [
-        .easy: 100,
-        .normal: 200,
-        .hard: 200,
-        .expert: 300,
-    ]
 
     func placeholder(in context: Context) -> WaterPuzzleWidgetEntry {
         WaterPuzzleWidgetEntry(
             date: .now,
-            progressByMode: GameMode.allCases.map { mode in
-                WidgetDataProvider.DifficultyProgress(
-                    mode: mode,
-                    completedCount: 0,
-                    nextLevel: 1,
-                    totalLevels: Self.totalLevels[mode] ?? 100
-                )
-            }
+            progress: WidgetDataProvider.GameProgress(
+                completedCount: 0,
+                currentStage: .iron,
+                nextLevel: 1
+            )
         )
     }
 
@@ -47,46 +36,37 @@ struct WaterPuzzleTimelineProvider: TimelineProvider {
     private func createEntry() -> WaterPuzzleWidgetEntry {
         WaterPuzzleWidgetEntry(
             date: .now,
-            progressByMode: GameMode.allCases.map { mode in
-                WidgetDataProvider.progress(
-                    for: mode,
-                    totalLevels: Self.totalLevels[mode] ?? 100
-                )
-            }
+            progress: WidgetDataProvider.progress()
         )
     }
 }
 
 // MARK: - Widget Entry
 
-/// A single timeline entry containing progress data for all difficulties.
+/// A single timeline entry containing the player's current progress.
 struct WaterPuzzleWidgetEntry: TimelineEntry {
     let date: Date
-    let progressByMode: [WidgetDataProvider.DifficultyProgress]
+    let progress: WidgetDataProvider.GameProgress
 }
 
 // MARK: - Widget View
 
-/// The widget's SwiftUI view, showing the best difficulty to resume.
+/// The widget's SwiftUI view, showing the current stage and next level.
 ///
-/// Displays the first non-completed difficulty with a "Continue" prompt
-/// and a progress ring. If all are complete, shows a congratulations state.
+/// Displays the player's current stage with a progress ring and
+/// "Continue" prompt. If all available levels are complete, shows
+/// a congratulations state.
 struct WaterPuzzleWidgetView: View {
     let entry: WaterPuzzleWidgetEntry
 
     @Environment(\.widgetFamily) private var family
 
-    /// The first difficulty that still has unsolved levels.
-    private var activeDifficulty: WidgetDataProvider.DifficultyProgress? {
-        entry.progressByMode.first { !$0.isAllComplete }
-    }
-
     var body: some View {
         Group {
-            if let active = activeDifficulty {
-                activeView(active)
-            } else {
+            if entry.progress.isAllComplete {
                 allCompleteView
+            } else {
+                activeView(entry.progress)
             }
         }
         .containerBackground(.background, for: .widget)
@@ -94,11 +74,11 @@ struct WaterPuzzleWidgetView: View {
 
     // MARK: - Active Game View
 
-    private func activeView(_ progress: WidgetDataProvider.DifficultyProgress) -> some View {
+    private func activeView(_ progress: WidgetDataProvider.GameProgress) -> some View {
         VStack(spacing: 6) {
             HStack {
                 Image(systemName: "drop.fill")
-                    .foregroundStyle(colorForMode(progress.mode))
+                    .foregroundStyle(progress.currentStage.themeColor)
                 Text("Water Sort")
                     .font(.system(.caption, design: .rounded, weight: .bold))
                     .foregroundStyle(.primary)
@@ -112,19 +92,20 @@ struct WaterPuzzleWidgetView: View {
                 Circle()
                     .stroke(.secondary.opacity(0.3), lineWidth: 4)
                 Circle()
-                    .trim(from: 0, to: progress.progress)
+                    .trim(from: 0, to: progress.stageProgress)
                     .stroke(
-                        colorForMode(progress.mode),
+                        progress.currentStage.themeColor,
                         style: StrokeStyle(lineWidth: 4, lineCap: .round)
                     )
                     .rotationEffect(.degrees(-90))
 
                 VStack(spacing: 0) {
-                    Text("\(progress.nextLevel)")
+                    let localLevel = Stage.localLevelNumber(for: progress.nextLevel)
+                    Text("\(localLevel)")
                         .font(.system(.title2, design: .rounded, weight: .bold))
                         .foregroundStyle(.primary)
                         .contentTransition(.numericText())
-                    Text(progress.mode.displayName)
+                    Text(progress.currentStage.displayName)
                         .font(.system(.caption2, design: .rounded))
                         .foregroundStyle(.secondary)
                 }
@@ -138,7 +119,7 @@ struct WaterPuzzleWidgetView: View {
                 .foregroundStyle(.secondary)
         }
         .padding()
-        .widgetURL(deepLinkURL(mode: progress.mode, level: progress.nextLevel))
+        .widgetURL(deepLinkURL(level: progress.nextLevel))
     }
 
     // MARK: - All Complete View
@@ -157,18 +138,8 @@ struct WaterPuzzleWidgetView: View {
 
     // MARK: - Helpers
 
-    private func colorForMode(_ mode: GameMode) -> Color {
-        switch mode {
-        case .easy: .green
-        case .normal: .blue
-        case .hard: .orange
-        case .expert: .red
-        }
-    }
-
-    private func deepLinkURL(mode: GameMode, level: Int) -> URL {
-        // Values are developer-controlled integers, but avoid force-unwrap as defensive practice
-        guard let url = URL(string: "waterpuzzle://play?mode=\(mode.rawValue)&level=\(level)") else {
+    private func deepLinkURL(level: Int) -> URL {
+        guard let url = URL(string: "waterpuzzle://play?level=\(level)") else {
             return URL(string: "waterpuzzle://play")!
         }
         return url
@@ -179,13 +150,13 @@ struct WaterPuzzleWidgetView: View {
 
 /// Home Screen / StandBy / Lock Screen widget for Water Sort Puzzle.
 ///
-/// Shows the player's next playable level with a progress ring.
+/// Shows the player's current stage and next playable level with a progress ring.
 /// Tapping opens the app directly to that level.
 ///
 /// ## Setup Required
 /// To use this widget, add a Widget Extension target in Xcode:
 /// File → New → Target → Widget Extension.
-/// Then move this file into that target and add `GameMode`,
+/// Then move this file into that target and add `Stage`,
 /// `WidgetDataProvider`, and the data models to the shared framework.
 struct WaterPuzzleWidget: Widget {
     let kind: String = "WaterPuzzleWidget"

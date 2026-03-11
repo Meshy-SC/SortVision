@@ -153,10 +153,6 @@ struct UserDefaultsSnapshot {
 
     /// All GameManager-related UserDefaults keys.
     static var gameManagerKeys: [String] {
-        var keys = [GameManager.soundEnabledKey]
-        for mode in GameMode.allCases {
-            keys.append(mode.completionKey)
-        }
-        return keys
+        [GameManager.soundEnabledKey, GameManager.completionKey, "stage_progress_migrated"]
     }
 }

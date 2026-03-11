@@ -16,9 +16,10 @@ final class DeepLinkManager {
 
     /// A pending navigation request from an App Intent or Widget.
     ///
+    /// Stores the global level number (1–1000) to navigate to.
     /// Set by intents/widgets, consumed by `RootNavigationView` on appearance.
     /// Automatically cleared after navigation is performed.
-    var pendingLevel: (mode: GameMode, number: Int)?
+    var pendingLevel: Int?
 
     private init() {}
 }

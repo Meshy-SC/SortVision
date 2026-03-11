@@ -6,59 +6,65 @@ import Testing
 @Suite("PlayLevelIntent & App Intents")
 struct PlayLevelIntentTests {
 
-    // MARK: - GameModeAppEnum Conversion
+    // MARK: - StageAppEnum Conversion
 
-    @Test("GameModeAppEnum converts to GameMode correctly",
+    @Test("StageAppEnum converts to Stage correctly",
           arguments: [
-            (GameModeAppEnum.easy, GameMode.easy),
-            (.normal, .normal),
-            (.hard, .hard),
-            (.expert, .expert),
+            (StageAppEnum.iron, Stage.iron),
+            (.bronze, .bronze),
+            (.silver, .silver),
+            (.gold, .gold),
+            (.platinum, .platinum),
+            (.diamond, .diamond),
+            (.emerald, .emerald),
+            (.ruby, .ruby),
+            (.obsidian, .obsidian),
+            (.legend, .legend),
           ])
-    func appEnumToGameMode(appEnum: GameModeAppEnum, expected: GameMode) {
-        #expect(appEnum.gameMode == expected)
+    func appEnumToStage(appEnum: StageAppEnum, expected: Stage) {
+        #expect(appEnum.stage == expected)
     }
 
-    @Test("GameModeAppEnum round-trips from GameMode",
-          arguments: GameMode.allCases)
-    func gameModeRoundTrip(mode: GameMode) {
-        let appEnum = GameModeAppEnum(from: mode)
-        #expect(appEnum.gameMode == mode)
+    @Test("StageAppEnum round-trips from Stage",
+          arguments: Stage.allCases)
+    func stageRoundTrip(stage: Stage) {
+        let appEnum = StageAppEnum(from: stage)
+        #expect(appEnum.stage == stage)
     }
 
-    @Test("All GameMode cases have corresponding AppEnum cases")
-    func allModesHaveAppEnumRepresentation() {
-        for mode in GameMode.allCases {
-            let appEnum = GameModeAppEnum(from: mode)
-            #expect(appEnum.gameMode == mode)
+    @Test("All Stage cases have corresponding AppEnum cases")
+    func allStagesHaveAppEnumRepresentation() {
+        for stage in Stage.allCases {
+            let appEnum = StageAppEnum(from: stage)
+            #expect(appEnum.stage == stage)
         }
     }
 
     // MARK: - PlayLevelError
 
-    @Test("PlayLevelError.levelNotFound includes level number and difficulty")
+    @Test("PlayLevelError.levelNotFound includes level number and stage")
     func levelNotFoundError() {
-        let error = PlayLevelError.levelNotFound(42, "Expert")
+        let error = PlayLevelError.levelNotFound(42, "Gold")
         let description = String(localized: error.localizedStringResource)
         #expect(description.contains("42"))
-        #expect(description.contains("Expert"))
+        #expect(description.contains("Gold"))
     }
 
-    @Test("PlayLevelError.levelLocked includes level number and difficulty")
+    @Test("PlayLevelError.levelLocked includes level number and stage")
     func levelLockedError() {
-        let error = PlayLevelError.levelLocked(10, "Hard")
+        let error = PlayLevelError.levelLocked(10, "Silver")
         let description = String(localized: error.localizedStringResource)
         #expect(description.contains("10"))
-        #expect(description.contains("Hard"))
+        #expect(description.contains("Silver"))
     }
 
     // MARK: - ContinuePlayingError
 
-    @Test("ContinuePlayingError.allCompleted includes difficulty name")
+    @Test("ContinuePlayingError.allCompleted has a message")
     func allCompletedError() {
-        let error = ContinuePlayingError.allCompleted("Easy")
+        let error = ContinuePlayingError.allCompleted
         let description = String(localized: error.localizedStringResource)
-        #expect(description.contains("Easy"))
+        #expect(!description.isEmpty)
     }
 
     // MARK: - Intent Metadata
@@ -73,15 +79,21 @@ struct PlayLevelIntentTests {
         #expect(ContinuePlayingIntent.openAppWhenRun == true)
     }
 
-    // MARK: - GameModeAppEnum Display Representations
+    // MARK: - StageAppEnum Display Representations
 
-    @Test("GameModeAppEnum has display representations for all cases")
+    @Test("StageAppEnum has display representations for all cases")
     func allCasesHaveDisplayRepresentations() {
-        let representations = GameModeAppEnum.caseDisplayRepresentations
-        #expect(representations.count == 4)
-        #expect(representations[.easy] != nil)
-        #expect(representations[.normal] != nil)
-        #expect(representations[.hard] != nil)
-        #expect(representations[.expert] != nil)
+        let representations = StageAppEnum.caseDisplayRepresentations
+        #expect(representations.count == 10)
+        #expect(representations[.iron] != nil)
+        #expect(representations[.bronze] != nil)
+        #expect(representations[.silver] != nil)
+        #expect(representations[.gold] != nil)
+        #expect(representations[.platinum] != nil)
+        #expect(representations[.diamond] != nil)
+        #expect(representations[.emerald] != nil)
+        #expect(representations[.ruby] != nil)
+        #expect(representations[.obsidian] != nil)
+        #expect(representations[.legend] != nil)
     }
 }

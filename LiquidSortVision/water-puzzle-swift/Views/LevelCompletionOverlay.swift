@@ -5,8 +5,8 @@ import SwiftUI
 /// Uses system materials, standard button styles, and
 /// primary/secondary label colours. No custom forced colours.
 struct LevelCompletionOverlay: View {
-    let gameMode: GameMode
-    let levelNumber: Int
+    let stage: Stage
+    let level: Level
     @Binding var path: NavigationPath
     @Environment(GameManager.self) private var gameManager
     @AccessibilityFocusState private var isOverlayFocused: Bool
@@ -17,6 +17,10 @@ struct LevelCompletionOverlay: View {
     ]
 
     @State private var displayedMessage: String = "Great!"
+
+    private var localNumber: Int {
+        Stage.localLevelNumber(for: level.number)
+    }
 
     var body: some View {
         ZStack {
@@ -36,7 +40,7 @@ struct LevelCompletionOverlay: View {
                     .font(.title.bold())
                     .accessibilityFocused($isOverlayFocused)
 
-                Text("Level \(levelNumber) Complete")
+                Text("Level \(localNumber) Complete")
                     .font(.headline)
                     .foregroundStyle(.secondary)
 
@@ -44,21 +48,16 @@ struct LevelCompletionOverlay: View {
                     .padding(.horizontal, 24)
 
                 VStack(spacing: 12) {
-                    if gameManager.hasNextLevel(mode: gameMode, after: levelNumber) {
+                    if gameManager.hasNextLevel(after: level.number) {
                         Button {
-                            if let nextLevel = gameManager.level(
-                                for: gameMode, number: levelNumber + 1)
-                            {
-                                path.removeLast()
-                                path.append(AppScreen.gameplay(gameMode, nextLevel))
-                            }
+                            navigateToNextLevel()
                         } label: {
                             Text("Next Level")
                                 .frame(maxWidth: 240)
                         }
                         .buttonStyle(.borderedProminent)
                         .controlSize(.large)
-                        .accessibilityHint("Advances to level \(levelNumber + 1)")
+                        .accessibilityHint("Advances to level \(localNumber + 1)")
                         .keyboardShortcut(.defaultAction)
                     }
 
@@ -89,6 +88,27 @@ struct LevelCompletionOverlay: View {
             Task {
                 try? await Task.sleep(for: .milliseconds(500))
                 isOverlayFocused = true
+            }
+        }
+    }
+
+    private func navigateToNextLevel() {
+        let nextGlobalNumber = level.number + 1
+        guard let nextLevel = gameManager.level(globalNumber: nextGlobalNumber),
+              let nextStage = Stage.stage(for: nextGlobalNumber)
+        else { return }
+
+        if nextStage == stage {
+            // Same stage — just swap the gameplay screen
+            path.removeLast()
+            path.append(AppScreen.gameplay(stage, nextLevel))
+        } else {
+            // Crossed into a new stage — navigate fresh
+            path.removeLast(path.count)
+            Task {
+                try? await Task.sleep(for: .milliseconds(100))
+                path.append(AppScreen.levelGrid(nextStage))
+                path.append(AppScreen.gameplay(nextStage, nextLevel))
             }
         }
     }

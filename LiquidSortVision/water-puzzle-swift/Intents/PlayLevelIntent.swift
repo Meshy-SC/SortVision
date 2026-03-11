@@ -1,48 +1,72 @@
 import AppIntents
 import Foundation
 
-// MARK: - Game Mode App Enum (for Siri & Shortcuts parameter)
+// MARK: - Stage App Enum (for Siri & Shortcuts parameter)
 
-/// Exposes `GameMode` to App Intents as a selectable parameter.
+/// Exposes `Stage` to App Intents as a selectable parameter.
 ///
-/// Allows Siri and the Shortcuts app to present a picker for difficulty
+/// Allows Siri and the Shortcuts app to present a picker for stage
 /// selection when building or invoking the "Play Level" shortcut.
-enum GameModeAppEnum: String, AppEnum, Sendable {
-    case easy
-    case normal
-    case hard
-    case expert
+enum StageAppEnum: String, AppEnum, Sendable {
+    case iron
+    case bronze
+    case silver
+    case gold
+    case platinum
+    case diamond
+    case emerald
+    case ruby
+    case obsidian
+    case legend
 
     static var typeDisplayRepresentation: TypeDisplayRepresentation {
-        "Difficulty"
+        "Stage"
     }
 
-    static var caseDisplayRepresentations: [GameModeAppEnum: DisplayRepresentation] {
+    static var caseDisplayRepresentations: [StageAppEnum: DisplayRepresentation] {
         [
-            .easy: "Easy",
-            .normal: "Normal",
-            .hard: "Hard",
-            .expert: "Expert",
+            .iron: "Iron",
+            .bronze: "Bronze",
+            .silver: "Silver",
+            .gold: "Gold",
+            .platinum: "Platinum",
+            .diamond: "Diamond",
+            .emerald: "Emerald",
+            .ruby: "Ruby",
+            .obsidian: "Obsidian",
+            .legend: "Legend",
         ]
     }
 
-    /// Converts to the app's internal `GameMode` enum.
-    var gameMode: GameMode {
+    /// Converts to the app's internal `Stage` enum.
+    var stage: Stage {
         switch self {
-        case .easy: .easy
-        case .normal: .normal
-        case .hard: .hard
-        case .expert: .expert
+        case .iron:     .iron
+        case .bronze:   .bronze
+        case .silver:   .silver
+        case .gold:     .gold
+        case .platinum: .platinum
+        case .diamond:  .diamond
+        case .emerald:  .emerald
+        case .ruby:     .ruby
+        case .obsidian: .obsidian
+        case .legend:   .legend
         }
     }
 
-    /// Creates from the app's internal `GameMode` enum.
-    init(from mode: GameMode) {
-        switch mode {
-        case .easy: self = .easy
-        case .normal: self = .normal
-        case .hard: self = .hard
-        case .expert: self = .expert
+    /// Creates from the app's internal `Stage` enum.
+    init(from stage: Stage) {
+        switch stage {
+        case .iron:     self = .iron
+        case .bronze:   self = .bronze
+        case .silver:   self = .silver
+        case .gold:     self = .gold
+        case .platinum: self = .platinum
+        case .diamond:  self = .diamond
+        case .emerald:  self = .emerald
+        case .ruby:     self = .ruby
+        case .obsidian: self = .obsidian
+        case .legend:   self = .legend
         }
     }
 }
@@ -52,8 +76,8 @@ enum GameModeAppEnum: String, AppEnum, Sendable {
 /// App Intent that opens the app to a specific level.
 ///
 /// Surfaces in Siri, Shortcuts, and Spotlight:
-/// - "Play Easy Level 5 in Water Sort Puzzle"
-/// - Configurable via Shortcuts app with difficulty and level number parameters
+/// - "Play Iron Level 5 in Water Sort Puzzle"
+/// - Configurable via Shortcuts app with stage and level number parameters
 ///
 /// Uses `OpenIntent` protocol to bring the app to the foreground and
 /// passes the selected level via the shared `DeepLinkManager`.
@@ -67,28 +91,29 @@ struct PlayLevelIntent: AppIntent {
 
     nonisolated static let openAppWhenRun: Bool = true
 
-    @Parameter(title: "Difficulty", default: .easy)
-    var difficulty: GameModeAppEnum
+    @Parameter(title: "Stage", default: .iron)
+    var stage: StageAppEnum
 
     @Parameter(title: "Level Number", default: 1)
     var levelNumber: Int
 
     @MainActor
     func perform() async throws -> some IntentResult {
-        let mode = difficulty.gameMode
+        let stageValue = stage.stage
+        let globalNumber = stageValue.levelRange.lowerBound + levelNumber - 1
         let manager = GameManager.shared
 
         // Validate level exists and is unlocked
-        guard manager.level(for: mode, number: levelNumber) != nil else {
-            throw PlayLevelError.levelNotFound(levelNumber, mode.displayName)
+        guard manager.level(globalNumber: globalNumber) != nil else {
+            throw PlayLevelError.levelNotFound(levelNumber, stageValue.displayName)
         }
 
-        guard !manager.isLevelLocked(mode: mode, number: levelNumber) else {
-            throw PlayLevelError.levelLocked(levelNumber, mode.displayName)
+        guard !manager.isLevelLocked(globalNumber) else {
+            throw PlayLevelError.levelLocked(levelNumber, stageValue.displayName)
         }
 
         // Set the deep link for the app to navigate to on activation
-        DeepLinkManager.shared.pendingLevel = (mode: mode, number: levelNumber)
+        DeepLinkManager.shared.pendingLevel = globalNumber
 
         return .result()
     }
@@ -101,10 +126,10 @@ enum PlayLevelError: LocalizedError, CustomLocalizedStringResourceConvertible {
 
     var localizedStringResource: LocalizedStringResource {
         switch self {
-        case .levelNotFound(let number, let difficulty):
-            "Level \(number) doesn't exist in \(difficulty) mode."
-        case .levelLocked(let number, let difficulty):
-            "Level \(number) in \(difficulty) mode is still locked. Complete earlier levels first."
+        case .levelNotFound(let number, let stage):
+            "Level \(number) doesn't exist in \(stage) stage."
+        case .levelLocked(let number, let stage):
+            "Level \(number) in \(stage) stage is still locked. Complete earlier levels first."
         }
     }
 }
@@ -115,7 +140,7 @@ enum PlayLevelError: LocalizedError, CustomLocalizedStringResourceConvertible {
 ///
 /// Surfaces in Siri and Shortcuts:
 /// - "Continue playing Water Sort Puzzle"
-/// - Automatically picks the next unlocked level in the chosen difficulty
+/// - Automatically picks the next unlocked level
 struct ContinuePlayingIntent: AppIntent {
     nonisolated static let title: LocalizedStringResource = "Continue Playing"
 
@@ -126,21 +151,16 @@ struct ContinuePlayingIntent: AppIntent {
 
     nonisolated static let openAppWhenRun: Bool = true
 
-    @Parameter(title: "Difficulty", default: .easy)
-    var difficulty: GameModeAppEnum
-
     @MainActor
     func perform() async throws -> some IntentResult {
-        let mode = difficulty.gameMode
         let manager = GameManager.shared
-        let nextLevel = manager.completedLevel(for: mode) + 1
-        let totalLevels = manager.levels(for: mode).count
+        let nextLevel = manager.completedLevel + 1
 
-        guard nextLevel <= totalLevels else {
-            throw ContinuePlayingError.allCompleted(mode.displayName)
+        guard manager.level(globalNumber: nextLevel) != nil else {
+            throw ContinuePlayingError.allCompleted
         }
 
-        DeepLinkManager.shared.pendingLevel = (mode: mode, number: nextLevel)
+        DeepLinkManager.shared.pendingLevel = nextLevel
 
         return .result()
     }
@@ -148,12 +168,12 @@ struct ContinuePlayingIntent: AppIntent {
 
 /// Errors for the Continue Playing intent.
 enum ContinuePlayingError: LocalizedError, CustomLocalizedStringResourceConvertible {
-    case allCompleted(String)
+    case allCompleted
 
     var localizedStringResource: LocalizedStringResource {
         switch self {
-        case .allCompleted(let difficulty):
-            "You've completed all \(difficulty) levels! Try a harder difficulty."
+        case .allCompleted:
+            "You've completed all available levels! More stages are coming soon."
         }
     }
 }
@@ -179,8 +199,8 @@ struct WaterPuzzleShortcuts: AppShortcutsProvider {
         AppShortcut(
             intent: PlayLevelIntent(),
             phrases: [
-                "Play a \(\.$difficulty) level in \(.applicationName)",
-                "Start \(\.$difficulty) in \(.applicationName)",
+                "Play a \(\.$stage) level in \(.applicationName)",
+                "Start \(\.$stage) in \(.applicationName)",
             ],
             shortTitle: "Play Level",
             systemImageName: "puzzlepiece.fill"
