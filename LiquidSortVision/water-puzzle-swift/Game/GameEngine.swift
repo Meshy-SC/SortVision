@@ -33,6 +33,15 @@ final class TubeState: Identifiable {
     /// Whether this tube is in the raised "selected" state.
     var isPending: Bool = false
 
+    /// Vertical offset applied during pour animation (e.g. lift, arc).
+    var animationOffsetY: CGFloat = 0
+
+    /// Horizontal offset applied during pour animation (moving toward target).
+    var animationOffsetX: CGFloat = 0
+
+    /// Rotation angle (radians) applied during pour (tilt).
+    var tiltAngle: CGFloat = 0
+
     init(index: Int) {
         self.index = index
     }
@@ -68,6 +77,14 @@ final class TubeState: Identifiable {
     func removeTopLiquid() -> Liquid? {
         liquids.popLast()
     }
+
+    /// Resets all animation properties to their defaults.
+    func resetAnimation() {
+        animationOffsetX = 0
+        animationOffsetY = 0
+        tiltAngle = 0
+        isPending = false
+    }
 }
 
 /// Central game engine for the puzzle.
@@ -94,18 +111,22 @@ final class GameEngine {
     private(set) var gameState: GameState = .idle
     private(set) var isTransferring: Bool = false
 
-    /// Active pour animation info (source index, target index, progress 0…1).
+    /// Active pour animation info for the stream overlay.
     private(set) var pourAnimation: PourAnimation? = nil
 
     enum GameState {
         case idle, playing, over
     }
 
-    /// Describes an active pour animation for the view layer.
+    /// Describes an active pour for the view layer to render the liquid stream.
     struct PourAnimation: Equatable {
         let sourceIndex: Int
         let targetIndex: Int
-        var progress: CGFloat
+        let colorGroupId: Int
+        /// 0…1 progress of liquid transfer.
+        var pourProgress: CGFloat = 0
+        /// Whether the stream should be visible (true during the pour phase).
+        var isStreaming: Bool = false
     }
 
     // MARK: - Setup
@@ -174,7 +195,13 @@ final class GameEngine {
         }
     }
 
-    // MARK: - Pour Logic
+    // MARK: - Pour Animation
+
+    /// Tilt angle for the pour (about 80°).
+    private let pourTiltAngle: CGFloat = 80.0 * .pi / 180.0
+
+    /// Height the tube lifts above rest before arcing.
+    private let arcLiftHeight: CGFloat = -50
 
     private func performPour(from source: TubeState, to target: TubeState) {
         guard let sourceLiquid = source.topLiquid,
@@ -190,59 +217,89 @@ final class GameEngine {
             target.remainingCapacity
         )
 
-        // Set up pour animation
+        let colorGroupId = sourceLiquid.groupId
+
+        // Direction: tilt toward target.
+        // Positive tiltSign means tilt clockwise (target is to the right).
+        let isTargetRight = target.index > source.index
+        let tiltSign: CGFloat = isTargetRight ? 1.0 : -1.0
+        let signedTilt = tiltSign * pourTiltAngle
+
+        // Horizontal distance between source and target centre.
+        // We'll compute this from their indices and typical spacing.
+        // The view will overlay the actual position via offsets.
+
         pourAnimation = PourAnimation(
             sourceIndex: source.index,
             targetIndex: target.index,
-            progress: 0
+            colorGroupId: colorGroupId
         )
 
-        SoundManager.shared.play(.water)
-
-        // Animate the pour over time
         Task { @MainActor in
-            let steps = 20
-            let stepDuration: Double = 0.025
+            let frameDuration: UInt64 = 16_000_000 // ~60 fps (16ms)
+
+            // === Phase 1: Lift up ===
+            await animateValue(duration: 0.18, frameDuration: frameDuration) { t in
+                source.animationOffsetY = self.arcLiftHeight * t
+            }
+
+            // === Phase 2: Tilt toward target ===
+            await animateValue(duration: 0.25, frameDuration: frameDuration) { t in
+                let eased = Self.easeInOut(t)
+                source.tiltAngle = signedTilt * eased
+            }
+
+            // === Phase 3: Pour with stream ===
+            SoundManager.shared.play(.water)
+            pourAnimation?.isStreaming = true
 
             let sourceStartValue = sourceLiquid.value
-
-            // Prepare target liquid
             var targetStartValue: CGFloat = 0
-            if let existing = target.topLiquid, existing.groupId == sourceLiquid.groupId {
+            if let existing = target.topLiquid, existing.groupId == colorGroupId {
                 targetStartValue = existing.value
             } else {
-                target.addLiquid(groupId: sourceLiquid.groupId, value: 0)
+                target.addLiquid(groupId: colorGroupId, value: 0)
             }
 
-            for i in 1...steps {
-                let t = CGFloat(i) / CGFloat(steps)
+            await animateValue(duration: 0.5, frameDuration: frameDuration) { t in
+                let eased = Self.easeInOut(t)
 
-                // Update source
+                // Update liquid values
                 if let srcIdx = source.liquids.indices.last {
-                    source.liquids[srcIdx].value = sourceStartValue - transferValue * t
+                    source.liquids[srcIdx].value = sourceStartValue - transferValue * eased
                 }
-
-                // Update target
                 if let tgtIdx = target.liquids.indices.last {
-                    target.liquids[tgtIdx].value = targetStartValue + transferValue * t
+                    target.liquids[tgtIdx].value = targetStartValue + transferValue * eased
                 }
 
-                pourAnimation?.progress = t
-
-                try? await Task.sleep(for: .milliseconds(Int(stepDuration * 1000)))
+                self.pourAnimation?.pourProgress = eased
             }
 
-            // Clean up
+            pourAnimation?.isStreaming = false
+
+            // === Phase 4: Untilt ===
+            let currentTilt = source.tiltAngle
+            await animateValue(duration: 0.22, frameDuration: frameDuration) { t in
+                let eased = Self.easeInOut(t)
+                source.tiltAngle = currentTilt * (1.0 - eased)
+            }
+
+            // === Phase 5: Return down ===
+            let currentLift = source.animationOffsetY
+            await animateValue(duration: 0.18, frameDuration: frameDuration) { t in
+                source.animationOffsetY = currentLift * (1.0 - t)
+            }
+
+            // === Clean up ===
+            source.resetAnimation()
             pourAnimation = nil
 
-            // Remove empty source liquid
+            // Snap liquid values
             if let last = source.liquids.last, last.value <= 0.05 {
                 source.removeTopLiquid()
             } else if let srcIdx = source.liquids.indices.last {
                 source.liquids[srcIdx].value = source.liquids[srcIdx].value.rounded()
             }
-
-            // Round target value
             if let tgtIdx = target.liquids.indices.last {
                 target.liquids[tgtIdx].value = target.liquids[tgtIdx].value.rounded()
             }
@@ -250,6 +307,27 @@ final class GameEngine {
             isTransferring = false
             checkWinCondition()
         }
+    }
+
+    // MARK: - Animation Helpers
+
+    /// Drives a closure with `t` from 0→1 over `duration` seconds at ~60fps.
+    private func animateValue(
+        duration: Double,
+        frameDuration: UInt64,
+        update: (CGFloat) -> Void
+    ) async {
+        let totalFrames = Int(duration / (Double(frameDuration) / 1_000_000_000.0))
+        for frame in 1...max(totalFrames, 1) {
+            let t = CGFloat(frame) / CGFloat(totalFrames)
+            update(min(t, 1.0))
+            try? await Task.sleep(nanoseconds: frameDuration)
+        }
+    }
+
+    /// Smooth ease-in-out curve.
+    private static func easeInOut(_ t: CGFloat) -> CGFloat {
+        t * t * (3.0 - 2.0 * t)
     }
 
     // MARK: - Win Condition
@@ -283,6 +361,9 @@ final class GameEngine {
     // MARK: - Restart
 
     func restart() {
+        for tube in tubes {
+            tube.resetAnimation()
+        }
         tubes.removeAll()
         isTransferring = false
         pourAnimation = nil

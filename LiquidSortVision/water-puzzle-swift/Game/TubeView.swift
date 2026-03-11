@@ -4,7 +4,8 @@ import SwiftUI
 ///
 /// The tube is drawn with a rounded-rectangle glass outline and filled
 /// liquid segments that stack from bottom to top. When selected (pending),
-/// the tube lifts upward with a spring animation.
+/// the tube lifts upward with a spring animation. During a pour, the tube
+/// tilts and moves realistically.
 struct TubeView: View {
 
     // MARK: - Constants
@@ -32,6 +33,11 @@ struct TubeView: View {
     let tube: TubeState
     let onTap: () -> Void
 
+    /// Whether this tube is actively being animated by a pour.
+    private var isAnimating: Bool {
+        tube.tiltAngle != 0 || tube.animationOffsetX != 0 || tube.animationOffsetY != 0
+    }
+
     var body: some View {
         ZStack(alignment: .bottom) {
             // Glass outline
@@ -51,8 +57,16 @@ struct TubeView: View {
                 .padding(.bottom, Self.wallThickness)
         }
         .frame(width: Self.tubeWidth, height: Self.tubeHeight)
-        .offset(y: tube.isPending ? -Self.pendingLift : 0)
-        .animation(.spring(response: 0.25, dampingFraction: 0.7), value: tube.isPending)
+        // Pending lift (only when not in pour animation)
+        .offset(y: tube.isPending && !isAnimating ? -Self.pendingLift : 0)
+        // Pour animation transforms
+        .offset(x: tube.animationOffsetX, y: tube.animationOffsetY)
+        .rotationEffect(.radians(tube.tiltAngle), anchor: .bottom)
+        .animation(
+            isAnimating ? nil : .spring(response: 0.25, dampingFraction: 0.7),
+            value: tube.isPending
+        )
+        .zIndex(isAnimating ? 10 : 0)
         .onTapGesture {
             onTap()
         }
@@ -64,7 +78,6 @@ struct TubeView: View {
     // MARK: - Glass Outline
 
     private var glassOutline: some View {
-        // Bottle shape: open top, rounded bottom
         BottleShape(cornerRadius: Self.cornerRadius)
             .stroke(
                 Color.primary.opacity(0.3),
