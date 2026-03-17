@@ -25,7 +25,7 @@ enum WidgetDataProvider {
         completedLevel() + 1
     }
 
-    /// Returns the stage the player is currently in.
+    /// Returns the world the player is currently in.
     static func currentStage() -> Stage {
         let completed = completedLevel()
         if completed == 0 { return .iron }

@@ -1,8 +1,8 @@
 import SwiftUI
 
-/// App settings presented as a native sheet.
+/// App settings presented as a sheet with world-themed styling.
 ///
-/// Currently offers a sound toggle. Designed to be extended
+/// Offers sound toggle and app info. Designed to be extended
 /// with additional settings in the future (e.g., haptics,
 /// colour-blind mode, reset progress).
 struct SettingsView: View {
@@ -14,7 +14,7 @@ struct SettingsView: View {
             Form {
                 Section {
                     Toggle(isOn: Bindable(gameManager).soundEnabled) {
-                        Label("Sound Effects", systemImage: "speaker.wave.2")
+                        Label("Sound Effects", systemImage: "speaker.wave.2.fill")
                     }
                     #if os(iOS)
                     .sensoryFeedback(.selection, trigger: gameManager.soundEnabled)
@@ -26,8 +26,16 @@ struct SettingsView: View {
                 }
 
                 Section {
-                    LabeledContent("Version") {
+                    LabeledContent {
                         Text(Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0")
+                    } label: {
+                        Label("Version", systemImage: "info.circle")
+                    }
+
+                    LabeledContent {
+                        Text("10 Worlds × 100 Levels")
+                    } label: {
+                        Label("Total Levels", systemImage: "square.grid.3x3")
                     }
                 } header: {
                     Text("About")

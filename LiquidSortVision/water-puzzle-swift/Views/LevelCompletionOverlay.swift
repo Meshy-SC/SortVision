@@ -1,9 +1,9 @@
 import SwiftUI
 
-/// Level completion — native Apple modal-style overlay.
+/// Level completion overlay with world-themed styling.
 ///
-/// Uses system materials, standard button styles, and
-/// primary/secondary label colours. No custom forced colours.
+/// Displays a celebration card with the world icon, completion message,
+/// and navigation buttons. Uses the world's theme color throughout.
 struct LevelCompletionOverlay: View {
     let stage: Stage
     let level: Level
@@ -29,20 +29,39 @@ struct LevelCompletionOverlay: View {
                 .ignoresSafeArea()
                 .onTapGesture {}
 
-            VStack(spacing: 20) {
-                Image(systemName: "checkmark.seal.fill")
-                    .font(.system(size: 48))
-                    .foregroundStyle(.green)
-                    .symbolEffect(.bounce, options: .nonRepeating)
-                    .accessibilityHidden(true)
+            VStack(spacing: 24) {
+                // World icon with theme color
+                ZStack {
+                    Circle()
+                        .fill(
+                            LinearGradient(
+                                colors: [stage.themeColor, stage.secondaryColor],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        )
+                        .frame(width: 64, height: 64)
 
-                Text(displayedMessage)
-                    .font(.title.bold())
-                    .accessibilityFocused($isOverlayFocused)
+                    Image(systemName: "checkmark")
+                        .font(.system(size: 28, weight: .bold))
+                        .foregroundStyle(.white)
+                        .symbolEffect(.bounce, options: .nonRepeating)
+                }
+                .accessibilityHidden(true)
 
-                Text("Level \(localNumber) Complete")
-                    .font(.headline)
-                    .foregroundStyle(.secondary)
+                VStack(spacing: 8) {
+                    Text(displayedMessage)
+                        .font(.title.bold())
+                        .accessibilityFocused($isOverlayFocused)
+
+                    Text("Level \(localNumber) Complete")
+                        .font(.headline)
+                        .foregroundStyle(.secondary)
+
+                    Text("\(stage.displayName) • World \(stage.worldNumber)")
+                        .font(.subheadline)
+                        .foregroundStyle(stage.themeColor)
+                }
 
                 Divider()
                     .padding(.horizontal, 24)
@@ -52,10 +71,14 @@ struct LevelCompletionOverlay: View {
                         Button {
                             navigateToNextLevel()
                         } label: {
-                            Text("Next Level")
-                                .frame(maxWidth: 240)
+                            HStack {
+                                Text("Next Level")
+                                Image(systemName: "arrow.right")
+                            }
+                            .frame(maxWidth: 240)
                         }
                         .buttonStyle(.borderedProminent)
+                        .tint(stage.themeColor)
                         .controlSize(.large)
                         .accessibilityHint("Advances to level \(localNumber + 1)")
                         .keyboardShortcut(.defaultAction)
@@ -64,8 +87,11 @@ struct LevelCompletionOverlay: View {
                     Button {
                         path.removeLast(path.count)
                     } label: {
-                        Text("Main Menu")
-                            .frame(maxWidth: 240)
+                        HStack {
+                            Image(systemName: "house")
+                            Text("Main Menu")
+                        }
+                        .frame(maxWidth: 240)
                     }
                     .buttonStyle(.bordered)
                     .controlSize(.large)
@@ -74,10 +100,14 @@ struct LevelCompletionOverlay: View {
                 }
             }
             .padding(32)
-            .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 24))
+            .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
             #if !os(visionOS)
             .glassEffect()
             #endif
+            .overlay {
+                RoundedRectangle(cornerRadius: 24, style: .continuous)
+                    .strokeBorder(stage.themeColor.opacity(0.2), lineWidth: 1)
+            }
             .shadow(color: .black.opacity(0.08), radius: 24, y: 8)
             .padding(.horizontal, 40)
             .accessibilityElement(children: .contain)
@@ -99,11 +129,11 @@ struct LevelCompletionOverlay: View {
         else { return }
 
         if nextStage == stage {
-            // Same stage — just swap the gameplay screen
+            // Same world — just swap the gameplay screen
             path.removeLast()
             path.append(AppScreen.gameplay(stage, nextLevel))
         } else {
-            // Crossed into a new stage — navigate fresh
+            // Crossed into a new world — navigate fresh
             path.removeLast(path.count)
             Task {
                 try? await Task.sleep(for: .milliseconds(100))

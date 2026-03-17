@@ -77,9 +77,9 @@ struct WaterPuzzleWidgetView: View {
     private func activeView(_ progress: WidgetDataProvider.GameProgress) -> some View {
         VStack(spacing: 6) {
             HStack {
-                Image(systemName: "drop.fill")
+                Image(systemName: progress.currentStage.iconName)
                     .foregroundStyle(progress.currentStage.themeColor)
-                Text("Water Sort")
+                Text("World \(progress.currentStage.worldNumber)")
                     .font(.system(.caption, design: .rounded, weight: .bold))
                     .foregroundStyle(.primary)
                 Spacer()
@@ -90,7 +90,7 @@ struct WaterPuzzleWidgetView: View {
             // Progress ring
             ZStack {
                 Circle()
-                    .stroke(.secondary.opacity(0.3), lineWidth: 4)
+                    .stroke(progress.currentStage.themeColor.opacity(0.2), lineWidth: 4)
                 Circle()
                     .trim(from: 0, to: progress.stageProgress)
                     .stroke(
@@ -116,7 +116,7 @@ struct WaterPuzzleWidgetView: View {
 
             Text("Continue →")
                 .font(.system(.caption, design: .rounded, weight: .medium))
-                .foregroundStyle(.secondary)
+                .foregroundStyle(progress.currentStage.themeColor)
         }
         .padding()
         .widgetURL(deepLinkURL(level: progress.nextLevel))

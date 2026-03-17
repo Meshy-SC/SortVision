@@ -1,9 +1,9 @@
 import SwiftUI
 
-/// Level selection grid — native Apple layout.
+/// Level selection grid with a world header card.
 ///
-/// Uses a `LazyVGrid` inside a `ScrollView` with system background
-/// and a prominent navigation title. Level tiles use native button styles.
+/// Displays a prominent world header with progress gauge, followed
+/// by a `LazyVGrid` of level tiles. Matches the Pushbox visual style.
 struct LevelGridView: View {
     @Environment(GameManager.self) private var gameManager
     @Binding var path: NavigationPath
@@ -23,25 +23,40 @@ struct LevelGridView: View {
                         path.removeLast()
                     }
                     .buttonStyle(.borderedProminent)
+                    .controlSize(.large)
                 }
             } else {
                 ScrollView {
-                    LazyVGrid(columns: columns, spacing: 12) {
+                    VStack(spacing: 16) {
+                        // World header card
                         let levels = gameManager.levels(for: stage)
-                        ForEach(levels) { level in
-                            let displayNumber = Stage.localLevelNumber(for: level.number)
-                            LevelTileView(
-                                levelNumber: displayNumber,
-                                isLocked: gameManager.isLevelLocked(level.number),
-                                isCompleted: level.number <= gameManager.completedLevel
-                            ) {
-                                path.append(AppScreen.gameplay(stage, level))
+                        let completedInStage = gameManager.completedCountInStage(stage)
+
+                        WorldHeaderView(
+                            stage: stage,
+                            completed: completedInStage,
+                            total: levels.count
+                        )
+
+                        // Level grid
+                        LazyVGrid(columns: columns, spacing: 12) {
+                            ForEach(levels) { level in
+                                let displayNumber = Stage.localLevelNumber(for: level.number)
+                                LevelTileView(
+                                    levelNumber: displayNumber,
+                                    isLocked: gameManager.isLevelLocked(level.number),
+                                    isCompleted: level.number <= gameManager.completedLevel,
+                                    themeColor: stage.themeColor
+                                ) {
+                                    path.append(AppScreen.gameplay(stage, level))
+                                }
                             }
                         }
                     }
                     .padding(.horizontal, 16)
-                    .padding(.vertical, 8)
+                    .padding(.vertical, 12)
                 }
+                .background(.background.secondary)
             }
         }
         .navigationTitle(stage.displayName)

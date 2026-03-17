@@ -1,19 +1,17 @@
 import SwiftUI
 
-/// Metal/Material-based ranking tier for the game's level progression.
+/// Metal/Material-based world tier for the game's level progression.
 ///
-/// Replaces the old difficulty-based system with a 10-tier sequential
-/// progression. Each stage contains up to 100 levels, numbered globally
-/// from 1 to 1000.
+/// The game features 10 worlds, each containing 100 levels numbered
+/// globally from 1 to 1000.
 ///
 /// ## Progression
 /// ```
-/// Iron (1–100) → Bronze (101–200) → Silver (201–300) → Gold (301–400)
-/// → Platinum (401–500) → Diamond (501–600) → Emerald (601–700)
-/// → Ruby (701–800) → Obsidian (801–900) → Legend (901–1000)
+/// World 1: Iron (1–100) → World 2: Bronze (101–200) → …
+/// → World 10: Legend (901–1000)
 /// ```
 ///
-/// Stages 1–4 have level content shipped in the bundle. Stages 5–10
+/// Worlds 1–4 have level content shipped in the bundle. Worlds 5–10
 /// are reserved for future content.
 enum Stage: Int, CaseIterable, Codable, Sendable, Identifiable, Hashable {
     case iron = 0
@@ -29,12 +27,15 @@ enum Stage: Int, CaseIterable, Codable, Sendable, Identifiable, Hashable {
 
     var id: Int { rawValue }
 
-    /// Number of levels each stage contains.
+    /// Number of levels each world contains.
     static let levelsPerStage = 100
 
     // MARK: - Display Properties
 
-    /// Human-readable stage name.
+    /// 1-based world number for display (1–10).
+    var worldNumber: Int { rawValue + 1 }
+
+    /// Human-readable world name.
     var displayName: String {
         switch self {
         case .iron:     "Iron"
@@ -50,7 +51,23 @@ enum Stage: Int, CaseIterable, Codable, Sendable, Identifiable, Hashable {
         }
     }
 
-    /// SF Symbol icon for the stage.
+    /// Thematic subtitle for the world.
+    var subtitle: String {
+        switch self {
+        case .iron:     "The Forge"
+        case .bronze:   "Age of Valor"
+        case .silver:   "Moonlit Trials"
+        case .gold:     "Crown Jewels"
+        case .platinum: "Ethereal Heights"
+        case .diamond:  "Crystal Depths"
+        case .emerald:  "Verdant Maze"
+        case .ruby:     "Crimson Gauntlet"
+        case .obsidian: "Shadow Realm"
+        case .legend:   "Hall of Fame"
+        }
+    }
+
+    /// SF Symbol icon for the world.
     var iconName: String {
         switch self {
         case .iron:     "hammer.fill"
@@ -66,7 +83,7 @@ enum Stage: Int, CaseIterable, Codable, Sendable, Identifiable, Hashable {
         }
     }
 
-    /// Theme color for the stage, adapts to light/dark mode.
+    /// Theme color for the world, adapts to light/dark mode.
     var themeColor: Color {
         switch self {
         case .iron:     .gray
@@ -79,6 +96,22 @@ enum Stage: Int, CaseIterable, Codable, Sendable, Identifiable, Hashable {
         case .ruby:     .red
         case .obsidian: .indigo
         case .legend:   .purple
+        }
+    }
+
+    /// Secondary gradient color for the world card.
+    var secondaryColor: Color {
+        switch self {
+        case .iron:     Color(red: 0.45, green: 0.45, blue: 0.50)
+        case .bronze:   Color(red: 0.60, green: 0.35, blue: 0.10)
+        case .silver:   Color(red: 0.55, green: 0.55, blue: 0.60)
+        case .gold:     Color(red: 0.85, green: 0.65, blue: 0.00)
+        case .platinum: Color(red: 0.40, green: 0.80, blue: 0.75)
+        case .diamond:  Color(red: 0.10, green: 0.60, blue: 0.80)
+        case .emerald:  Color(red: 0.10, green: 0.55, blue: 0.25)
+        case .ruby:     Color(red: 0.75, green: 0.10, blue: 0.15)
+        case .obsidian: Color(red: 0.20, green: 0.15, blue: 0.50)
+        case .legend:   Color(red: 0.50, green: 0.20, blue: 0.60)
         }
     }
 

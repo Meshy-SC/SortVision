@@ -3,9 +3,9 @@ import Foundation
 
 // MARK: - Stage App Enum (for Siri & Shortcuts parameter)
 
-/// Exposes `Stage` to App Intents as a selectable parameter.
+/// Exposes `Stage` (World) to App Intents as a selectable parameter.
 ///
-/// Allows Siri and the Shortcuts app to present a picker for stage
+/// Allows Siri and the Shortcuts app to present a picker for world
 /// selection when building or invoking the "Play Level" shortcut.
 enum StageAppEnum: String, AppEnum, Sendable {
     case iron
@@ -20,7 +20,7 @@ enum StageAppEnum: String, AppEnum, Sendable {
     case legend
 
     static var typeDisplayRepresentation: TypeDisplayRepresentation {
-        "Stage"
+        "World"
     }
 
     static var caseDisplayRepresentations: [StageAppEnum: DisplayRepresentation] {
@@ -91,7 +91,7 @@ struct PlayLevelIntent: AppIntent {
 
     nonisolated static let openAppWhenRun: Bool = true
 
-    @Parameter(title: "Stage", default: .iron)
+    @Parameter(title: "World", default: .iron)
     var stage: StageAppEnum
 
     @Parameter(title: "Level Number", default: 1)
@@ -126,10 +126,10 @@ enum PlayLevelError: LocalizedError, CustomLocalizedStringResourceConvertible {
 
     var localizedStringResource: LocalizedStringResource {
         switch self {
-        case .levelNotFound(let number, let stage):
-            "Level \(number) doesn't exist in \(stage) stage."
-        case .levelLocked(let number, let stage):
-            "Level \(number) in \(stage) stage is still locked. Complete earlier levels first."
+        case .levelNotFound(let number, let world):
+            "Level \(number) doesn't exist in \(world) world."
+        case .levelLocked(let number, let world):
+            "Level \(number) in \(world) world is still locked. Complete earlier levels first."
         }
     }
 }
@@ -173,7 +173,7 @@ enum ContinuePlayingError: LocalizedError, CustomLocalizedStringResourceConverti
     var localizedStringResource: LocalizedStringResource {
         switch self {
         case .allCompleted:
-            "You've completed all available levels! More stages are coming soon."
+            "You've completed all available levels! More worlds are coming soon."
         }
     }
 }
@@ -200,7 +200,7 @@ struct WaterPuzzleShortcuts: AppShortcutsProvider {
             intent: PlayLevelIntent(),
             phrases: [
                 "Play a \(\.$stage) level in \(.applicationName)",
-                "Start \(\.$stage) in \(.applicationName)",
+                "Start \(\.$stage) world in \(.applicationName)",
             ],
             shortTitle: "Play Level",
             systemImageName: "puzzlepiece.fill"

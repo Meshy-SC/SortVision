@@ -1,9 +1,10 @@
 import SwiftUI
 
-/// Gameplay screen — native toolbar-based HUD with system background.
+/// Gameplay screen with world-themed toolbar and HUD.
 ///
-/// Uses a standard `toolbar` for Home/Restart controls. The game
-/// scene fills the available space.
+/// Uses the world's theme color in the navigation bar and displays
+/// the world/level context prominently. Toolbar buttons use the same
+/// visual language as the rest of the UI.
 struct GameplayView: View {
     let stage: Stage
     let level: Level
@@ -59,7 +60,7 @@ struct GameplayView: View {
                 Button {
                     path.removeLast(path.count)
                 } label: {
-                    Label("Home", systemImage: "house")
+                    Label("Home", systemImage: "house.fill")
                 }
                 .accessibilityHint("Returns to main menu")
                 .keyboardShortcut("h", modifiers: .command)

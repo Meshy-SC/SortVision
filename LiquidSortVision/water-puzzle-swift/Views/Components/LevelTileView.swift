@@ -1,38 +1,70 @@
 import SwiftUI
 
-/// Individual level tile — native Apple button.
+/// Individual level tile with world-themed styling.
 ///
-/// Uses the system `borderedProminent` or `bordered` style
-/// depending on state, with standard tint colors and SF Symbols.
+/// Displays a circular tile with the level number, a checkmark
+/// for completed levels, or a lock icon for locked levels.
+/// Uses the world's theme color for visual consistency.
 struct LevelTileView: View {
     let levelNumber: Int
     let isLocked: Bool
     let isCompleted: Bool
+    let themeColor: Color
     let action: () -> Void
 
     var body: some View {
         Button(action: action) {
-            VStack(spacing: 4) {
+            ZStack {
+                // Background circle
+                if isCompleted {
+                    Circle()
+                        .fill(
+                            LinearGradient(
+                                colors: [themeColor, themeColor.opacity(0.8)],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        )
+                        .overlay {
+                            Circle()
+                                .strokeBorder(themeColor.opacity(0.3), lineWidth: 1.5)
+                        }
+                } else {
+                    Circle()
+                        .fill(.regularMaterial)
+                        .overlay {
+                            Circle()
+                                .strokeBorder(
+                                    isLocked
+                                        ? Color.secondary.opacity(0.15)
+                                        : themeColor.opacity(0.3),
+                                    lineWidth: 1.5
+                                )
+                        }
+                }
+
+                // Content
                 if isLocked {
                     Image(systemName: "lock.fill")
-                        .font(.body)
+                        .font(.caption)
                         .foregroundStyle(.secondary)
                 } else {
-                    Text("\(levelNumber)")
-                        .font(.body.weight(.semibold).monospacedDigit())
+                    VStack(spacing: 2) {
+                        Text("\(levelNumber)")
+                            .font(.system(.callout, design: .rounded, weight: .bold))
+                            .foregroundStyle(isCompleted ? .white : .primary)
 
-                    if isCompleted {
-                        Image(systemName: "checkmark.circle.fill")
-                            .font(.caption)
-                            .foregroundStyle(.green)
+                        if isCompleted {
+                            Image(systemName: "checkmark")
+                                .font(.system(size: 8, weight: .bold))
+                                .foregroundStyle(.white.opacity(0.8))
+                        }
                     }
                 }
             }
-            .frame(maxWidth: .infinity)
-            .frame(height: 60)
+            .frame(height: 56)
         }
-        .buttonStyle(.bordered)
-        .tint(tileColor)
+        .buttonStyle(.plain)
         .disabled(isLocked)
         .contextMenu {
             if !isLocked {
@@ -54,9 +86,7 @@ struct LevelTileView: View {
         )
     }
 
-    private var tileColor: Color {
-        isLocked ? .gray : .accentColor
-    }
+    // MARK: - Styling
 
     private var accessibilityLabelText: String {
         if isLocked { return "Level \(levelNumber), locked" }
