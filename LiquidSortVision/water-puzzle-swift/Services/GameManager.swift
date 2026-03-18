@@ -187,7 +187,9 @@ final class GameManager {
     /// A level is locked if its global number exceeds the next playable level
     /// (i.e., `globalNumber > completedLevel + 1`).
     func isLevelLocked(_ globalNumber: Int) -> Bool {
-        globalNumber > completedLevel + 1
+        // DEBUG: All levels unlocked for testing
+        false
+        // globalNumber > completedLevel + 1
     }
 
     /// Checks whether a stage is accessible to the player.
@@ -195,8 +197,10 @@ final class GameManager {
     /// A stage is accessible if it has content and the player has reached
     /// at least its first level (i.e., completed the previous stage or it's Iron).
     func isStageAccessible(_ stage: Stage) -> Bool {
-        guard stage.isAvailable else { return false }
-        return completedLevel >= stage.levelRange.lowerBound - 1
+        // DEBUG: All worlds accessible for testing
+        true
+        // guard stage.isAvailable else { return false }
+        // return completedLevel >= stage.levelRange.lowerBound - 1
     }
 
     /// Checks whether a next level exists after the given global level number.
