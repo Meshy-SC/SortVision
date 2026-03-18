@@ -67,21 +67,12 @@ struct WorldCardView: View {
                     .font(.title2)
                     .foregroundStyle(.secondary)
             } else {
-                CircularProgressGauge(
-                    progress: progress,
-                    color: stage.themeColor,
-                    size: 52,
-                    lineWidth: 4
-                ) {
-                    VStack(spacing: 0) {
-                        Text("\(completed)")
-                            .font(.system(.caption, design: .rounded, weight: .bold))
-                            .foregroundStyle(.primary)
-                        Text("/\(total)")
-                            .font(.system(.caption2, design: .rounded))
-                            .foregroundStyle(.secondary)
-                    }
-                }
+                CircularStatGauge(
+                    value: completed,
+                    maxValue: total,
+                    title: "",
+                    tintColor: stage.themeColor
+                )
             }
         }
         .padding(16)

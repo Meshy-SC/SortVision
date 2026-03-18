@@ -102,21 +102,12 @@ struct StageSelectionView: View {
 
             Spacer()
 
-            CircularProgressGauge(
-                progress: totalAvailable > 0 ? Double(totalCompleted) / Double(totalAvailable) : 0,
-                color: .accentColor,
-                size: 52,
-                lineWidth: 4
-            ) {
-                VStack(spacing: 0) {
-                    Text("\(totalCompleted)")
-                        .font(.system(.caption, design: .rounded, weight: .bold))
-                        .foregroundStyle(.primary)
-                    Text("/\(totalAvailable)")
-                        .font(.system(.caption2, design: .rounded))
-                        .foregroundStyle(.secondary)
-                }
-            }
+            CircularStatGauge(
+                value: totalCompleted,
+                maxValue: totalAvailable,
+                title: "",
+                tintColor: .accentColor
+            )
         }
         .padding(16)
         .background {

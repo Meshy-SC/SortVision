@@ -14,6 +14,7 @@ struct GameplayView: View {
 
     @State private var engine: GameEngine?
     @State private var showLevelComplete = false
+    @State private var completionMoves: Int = 0
 
     private var localNumber: Int {
         Stage.localLevelNumber(for: level.number)
@@ -37,6 +38,8 @@ struct GameplayView: View {
                 LevelCompletionOverlay(
                     stage: stage,
                     level: level,
+                    moveCount: completionMoves,
+                    parMoves: gameManager.optimalMoveCount(for: level.number),
                     path: $path
                 )
                 .transition(
@@ -66,6 +69,24 @@ struct GameplayView: View {
                 .keyboardShortcut("h", modifiers: .command)
             }
 
+            // Move counter in center
+            ToolbarItem(placement: .principal) {
+                if let engine, engine.gameState == .playing {
+                    HStack(spacing: 6) {
+                        Image(systemName: "arrow.left.arrow.right")
+                            .font(.caption)
+                            .foregroundStyle(stage.themeColor)
+                        Text("\(engine.moveCount)")
+                            .font(.system(.body, design: .rounded, weight: .bold))
+                            .monospacedDigit()
+                            .contentTransition(.numericText())
+                        Text("moves")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+            }
+
             ToolbarItem(placement: .primaryAction) {
                 Button {
                     showLevelComplete = false
@@ -93,10 +114,11 @@ struct GameplayView: View {
         gameEngine.reduceMotion = reduceMotion
 
         gameEngine.onLevelComplete = {
+            completionMoves = gameEngine.moveCount
             showLevelComplete = true
         }
-        gameEngine.onSaveProgress = { levelNumber in
-            gameManager.completeLevel(number: levelNumber)
+        gameEngine.onSaveProgress = { levelNumber, moves in
+            gameManager.completeLevel(number: levelNumber, moves: moves)
         }
 
         gameEngine.setup()

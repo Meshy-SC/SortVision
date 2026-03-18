@@ -2,13 +2,14 @@ import SwiftUI
 
 /// A prominent header card displayed at the top of the level grid.
 ///
-/// Shows the world's icon, name, subtitle, and a large circular
-/// progress gauge with completion stats. Provides a visual anchor
-/// for the level selection screen.
+/// Shows the world's icon, name, subtitle, and stat gauges
+/// for Progress and Stars, matching Pushbox's visual style.
 struct WorldHeaderView: View {
     let stage: Stage
     let completed: Int
     let total: Int
+    let totalStars: Int
+    let maxStars: Int
 
     private var progress: Double {
         guard total > 0 else { return 0 }
@@ -16,50 +17,69 @@ struct WorldHeaderView: View {
     }
 
     var body: some View {
-        HStack(spacing: 20) {
-            // Left: World info
-            VStack(alignment: .leading, spacing: 6) {
-                Text("World \(stage.worldNumber)")
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(stage.themeColor)
-                    .textCase(.uppercase)
-                    .tracking(0.5)
+        VStack(spacing: 16) {
+            // World info row
+            HStack(spacing: 16) {
+                // World icon
+                ZStack {
+                    Circle()
+                        .fill(
+                            LinearGradient(
+                                colors: [stage.themeColor, stage.secondaryColor],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        )
+                        .frame(width: 52, height: 52)
 
-                Text(stage.displayName)
-                    .font(.title.weight(.bold))
-                    .foregroundStyle(.primary)
+                    Image(systemName: stage.iconName)
+                        .font(.title2.weight(.semibold))
+                        .foregroundStyle(.white)
+                        .symbolRenderingMode(.hierarchical)
+                }
 
-                Text(stage.subtitle)
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-
-                // Horizontal progress bar
                 VStack(alignment: .leading, spacing: 4) {
-                    ProgressView(value: Double(completed), total: Double(max(total, 1)))
-                        .tint(stage.themeColor)
+                    Text("World \(stage.worldNumber)")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(stage.themeColor)
+                        .textCase(.uppercase)
+                        .tracking(0.5)
 
-                    Text("\(completed) of \(total) completed")
-                        .font(.caption)
+                    Text(stage.displayName)
+                        .font(.title2.weight(.bold))
+                        .foregroundStyle(.primary)
+
+                    Text(stage.subtitle)
+                        .font(.subheadline)
                         .foregroundStyle(.secondary)
                 }
-                .padding(.top, 4)
+
+                Spacer()
             }
 
-            Spacer()
+            // Stat gauges row
+            HStack(spacing: 0) {
+                Spacer()
 
-            // Right: Circular gauge
-            CircularProgressGauge(
-                progress: progress,
-                color: stage.themeColor,
-                size: 72,
-                lineWidth: 6
-            ) {
-                VStack(spacing: 1) {
-                    Text("\(Int(progress * 100))%")
-                        .font(.system(.callout, design: .rounded, weight: .bold))
-                        .foregroundStyle(.primary)
-                        .contentTransition(.numericText())
-                }
+                // Progress gauge
+                CircularStatGauge(
+                    value: completed,
+                    maxValue: total,
+                    title: "Progress",
+                    tintColor: stage.themeColor
+                )
+
+                Spacer()
+
+                // Stars gauge
+                CircularStatGauge(
+                    value: totalStars,
+                    maxValue: maxStars,
+                    title: "Stars",
+                    tintColor: .yellow
+                )
+
+                Spacer()
             }
         }
         .padding(20)
@@ -77,7 +97,61 @@ struct WorldHeaderView: View {
         }
         .accessibilityElement(children: .combine)
         .accessibilityLabel(
-            "World \(stage.worldNumber), \(stage.displayName), \(stage.subtitle), \(completed) of \(total) completed"
+            "World \(stage.worldNumber), \(stage.displayName), \(completed) of \(total) completed, \(totalStars) of \(maxStars) stars"
         )
+    }
+}
+
+// MARK: - CircularStatGauge
+
+/// A circular gauge showing value/max with a title label, matching Pushbox's design.
+struct CircularStatGauge: View {
+    let value: Int
+    let maxValue: Int
+    let title: String
+    let tintColor: Color
+
+    private var progress: Double {
+        guard maxValue > 0 else { return 0 }
+        return min(Double(value) / Double(maxValue), 1.0)
+    }
+
+    var body: some View {
+        VStack(spacing: 6) {
+            ZStack {
+                // Background track
+                Circle()
+                    .strokeBorder(tintColor.opacity(0.15), lineWidth: 5)
+                    .frame(width: 56, height: 56)
+
+                // Progress arc
+                Circle()
+                    .trim(from: 0, to: progress)
+                    .stroke(
+                        tintColor,
+                        style: StrokeStyle(lineWidth: 5, lineCap: .round)
+                    )
+                    .rotationEffect(.degrees(-90))
+                    .frame(width: 56, height: 56)
+                    .animation(.spring(response: 0.6), value: progress)
+
+                // Value display
+                VStack(spacing: 0) {
+                    Text("\(value)")
+                        .font(.system(.callout, design: .rounded, weight: .bold))
+                        .foregroundStyle(.primary)
+                        .contentTransition(.numericText())
+                    Text("/\(maxValue)")
+                        .font(.system(.caption2, design: .rounded))
+                        .foregroundStyle(.secondary)
+                }
+            }
+
+            Text(title)
+                .font(.caption2.weight(.medium))
+                .foregroundStyle(.secondary)
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(title): \(value) of \(maxValue)")
     }
 }

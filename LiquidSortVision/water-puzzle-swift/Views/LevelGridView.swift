@@ -35,7 +35,9 @@ struct LevelGridView: View {
                         WorldHeaderView(
                             stage: stage,
                             completed: completedInStage,
-                            total: levels.count
+                            total: levels.count,
+                            totalStars: totalStarsInStage,
+                            maxStars: levels.count * 3
                         )
 
                         // Level grid
@@ -46,6 +48,7 @@ struct LevelGridView: View {
                                     levelNumber: displayNumber,
                                     isLocked: gameManager.isLevelLocked(level.number),
                                     isCompleted: level.number <= gameManager.completedLevel,
+                                    starRating: gameManager.starRating(for: level.number),
                                     themeColor: stage.themeColor
                                 ) {
                                     path.append(AppScreen.gameplay(stage, level))
@@ -64,5 +67,13 @@ struct LevelGridView: View {
         .navigationBarTitleDisplayMode(.large)
         #endif
     }
-}
 
+    // MARK: - Computed
+
+    /// Total stars earned across all levels in this stage.
+    private var totalStarsInStage: Int {
+        gameManager.levels(for: stage).reduce(0) { sum, level in
+            sum + gameManager.starRating(for: level.number)
+        }
+    }
+}

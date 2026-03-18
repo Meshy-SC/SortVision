@@ -102,13 +102,14 @@ final class GameEngine {
     // MARK: - Callbacks
 
     var onLevelComplete: (() -> Void)?
-    var onSaveProgress: ((Int) -> Void)?
+    var onSaveProgress: ((Int, Int) -> Void)?  // (levelNumber, moveCount)
 
     // MARK: - Game State
 
     private(set) var tubes: [TubeState] = []
     private(set) var gameState: GameState = .idle
     private(set) var isTransferring: Bool = false
+    private(set) var moveCount: Int = 0
 
     /// Active pour animation info for the stream overlay.
     private(set) var pourAnimation: PourAnimation? = nil
@@ -133,6 +134,7 @@ final class GameEngine {
     /// Call once after setting `level` to initialise the game.
     func setup() {
         loadLevel()
+        moveCount = 0
         gameState = .playing
     }
 
@@ -210,6 +212,7 @@ final class GameEngine {
 
         source.isPending = false
         isTransferring = true
+        moveCount += 1
 
         let transferValue = min(
             sourceLiquid.value,
@@ -348,7 +351,7 @@ final class GameEngine {
         SoundManager.shared.play(.win)
 
         if let level {
-            onSaveProgress?(level.number)
+            onSaveProgress?(level.number, moveCount)
         }
 
         Task { @MainActor in
@@ -366,6 +369,7 @@ final class GameEngine {
         tubes.removeAll()
         isTransferring = false
         pourAnimation = nil
+        moveCount = 0
         gameState = .playing
         loadLevel()
     }
