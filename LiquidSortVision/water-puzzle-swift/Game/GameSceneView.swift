@@ -107,36 +107,34 @@ struct GameSceneView: View {
         let sourceFrame = tubeFrames[anim.sourceIndex] ?? .zero
         let targetFrame = tubeFrames[anim.targetIndex] ?? .zero
 
-        // Source lip: top-centre of the source tube, offset by its current
-        // animation transforms (tilt pushes the lip sideways and up).
+        // Source tube animation state
         let sourceTube = engine.tubes.first { $0.index == anim.sourceIndex }
         let tiltAngle = sourceTube?.tiltAngle ?? 0
         let offsetX = sourceTube?.animationOffsetX ?? 0
         let offsetY = sourceTube?.animationOffsetY ?? 0
 
-        // The rotation anchor is at the bottom of the tube frame.
-        // Under rotation, the top-centre point moves.
+        // With .bottom anchor, the rotation pivot is at the bottom-center.
+        // The mouth/lip is at the top of the tube (tubeHeight above the anchor).
         let tubeHeight = sourceFrame.height
-        let halfWidth = sourceFrame.width / 2
 
-        // Top-centre relative to bottom-centre (anchor)
+        // Top-centre relative to bottom-centre (anchor point)
         let localX: CGFloat = 0
         let localY: CGFloat = -tubeHeight
 
-        // Rotate around bottom-centre
+        // Rotate around the bottom-centre anchor
         let cosA = cos(tiltAngle)
         let sinA = sin(tiltAngle)
         let rotatedX = localX * cosA - localY * sinA
         let rotatedY = localX * sinA + localY * cosA
 
-        // Source lip in scene coordinates
-        let sourceBottomCenter = CGPoint(
+        // Bottom-center of tube in scene coords (with animation offsets)
+        let anchorPoint = CGPoint(
             x: sourceFrame.midX + offsetX,
             y: sourceFrame.maxY + offsetY
         )
         let sourceLip = CGPoint(
-            x: sourceBottomCenter.x + rotatedX,
-            y: sourceBottomCenter.y + rotatedY
+            x: anchorPoint.x + rotatedX,
+            y: anchorPoint.y + rotatedY
         )
 
         // Target opening: top-centre of the target tube
@@ -176,10 +174,11 @@ struct GameSceneView: View {
 
         let totalTubeWidth = CGFloat(rowCount) * TubeView.tubeWidth
         let availableSpacing = availableSize.width - totalTubeWidth - 32
-        let maxSpacing: CGFloat = 16
+        let maxSpacing: CGFloat = 14
         let tubeSpacing = max(4, min(maxSpacing, availableSpacing / CGFloat(max(rowCount - 1, 1))))
 
-        let rowSpacing: CGFloat = isTwoRows ? 24 : 0
+        // More row spacing for taller bottles
+        let rowSpacing: CGFloat = isTwoRows ? 40 : 0
 
         return LayoutInfo(
             isTwoRows: isTwoRows,

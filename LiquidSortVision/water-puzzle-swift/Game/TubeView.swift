@@ -1,32 +1,48 @@
 import SwiftUI
 
-/// A tube (bottle) view that displays liquid segments as stacked colored rectangles.
+/// A tube (glass bottle) view that displays liquid segments.
 ///
-/// The tube is drawn with a rounded-rectangle glass outline and filled
-/// liquid segments that stack from bottom to top. When selected (pending),
-/// the tube lifts upward with a spring animation. During a pour, the tube
-/// tilts and moves realistically.
+/// Draws a tall glass bottle matching the competition's visual style:
+/// - Wide rounded body with translucent cyan-blue glass
+/// - Visible glass reflections and edge highlights
+/// - Narrow neck with small dark cap
+/// - Vibrant liquid segments with rounded liquid surface
 struct TubeView: View {
 
     // MARK: - Constants
 
-    /// Width of the tube body.
-    static let tubeWidth: CGFloat = 44
+    /// Total width of the bottle body.
+    static let tubeWidth: CGFloat = 52
 
-    /// Height of the tube body.
-    static let tubeHeight: CGFloat = 160
+    /// Height of the main body (below the neck).
+    static let bodyHeight: CGFloat = 150
 
-    /// Corner radius for the bottle shape.
-    static let cornerRadius: CGFloat = 12
+    /// Height of the neck taper section.
+    static let neckHeight: CGFloat = 14
+
+    /// Width of the neck opening.
+    static let neckWidth: CGFloat = 22
+
+    /// Height of the cap/stopper.
+    static let capHeight: CGFloat = 12
+
+    /// Full height including body + neck + cap.
+    static let tubeHeight: CGFloat = bodyHeight + neckHeight + capHeight
+
+    /// Corner radius for the bottle bottom.
+    static let bottomRadius: CGFloat = 16
 
     /// Glass wall stroke width.
     static let wallThickness: CGFloat = 2.5
 
     /// Vertical offset when the tube is selected.
-    static let pendingLift: CGFloat = 16
+    static let pendingLift: CGFloat = 20
 
-    /// Height per liquid unit.
-    static let unitHeight: CGFloat = tubeHeight / CGFloat(TubeState.maxValue)
+    /// Height per liquid unit within the body.
+    static let unitHeight: CGFloat = (bodyHeight - wallThickness * 2) / CGFloat(TubeState.maxValue)
+
+    /// Inset for the liquid area inside the glass walls.
+    static let liquidInset: CGFloat = wallThickness + 1.5
 
     // MARK: - Properties
 
@@ -40,28 +56,24 @@ struct TubeView: View {
 
     var body: some View {
         ZStack(alignment: .bottom) {
-            // Glass outline
-            glassOutline
+            // Glass bottle (behind liquid)
+            glassBack
 
-            // Liquid stack
+            // Liquid stack (inside the body area only)
             liquidStack
-                .clipShape(
-                    UnevenRoundedRectangle(
-                        topLeadingRadius: 4,
-                        bottomLeadingRadius: Self.cornerRadius - 2,
-                        bottomTrailingRadius: Self.cornerRadius - 2,
-                        topTrailingRadius: 4
-                    )
-                )
-                .padding(.horizontal, Self.wallThickness)
-                .padding(.bottom, Self.wallThickness)
+                .padding(.horizontal, Self.liquidInset)
+                .padding(.bottom, Self.liquidInset)
+
+            // Glass front (shine overlay, on top of liquid)
+            glassFront
         }
         .frame(width: Self.tubeWidth, height: Self.tubeHeight)
         // Pending lift (only when not in pour animation)
         .offset(y: tube.isPending && !isAnimating ? -Self.pendingLift : 0)
-        // Pour animation transforms
-        .offset(x: tube.animationOffsetX, y: tube.animationOffsetY)
+        // Pour animation: rotate FIRST around bottom (tube tilts at its base),
+        // THEN offset lifts the entire rotated tube upward.
         .rotationEffect(.radians(tube.tiltAngle), anchor: .bottom)
+        .offset(x: tube.animationOffsetX, y: tube.animationOffsetY)
         .animation(
             isAnimating ? nil : .spring(response: 0.25, dampingFraction: 0.7),
             value: tube.isPending
@@ -75,18 +87,104 @@ struct TubeView: View {
         .accessibilityAddTraits(.isButton)
     }
 
-    // MARK: - Glass Outline
+    // MARK: - Glass Back (behind liquid)
 
-    private var glassOutline: some View {
-        BottleShape(cornerRadius: Self.cornerRadius)
+    private var glassBack: some View {
+        ZStack {
+            // Glass body fill — translucent dark blue
+            BottleShape(
+                bodyWidth: Self.tubeWidth,
+                bodyHeight: Self.bodyHeight,
+                neckWidth: Self.neckWidth,
+                neckHeight: Self.neckHeight,
+                capHeight: Self.capHeight,
+                bottomRadius: Self.bottomRadius
+            )
+            .fill(
+                LinearGradient(
+                    colors: [
+                        Color(red: 0.12, green: 0.15, blue: 0.25).opacity(0.85),
+                        Color(red: 0.10, green: 0.13, blue: 0.22).opacity(0.80),
+                        Color(red: 0.08, green: 0.11, blue: 0.20).opacity(0.85),
+                    ],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+            )
+
+            // Glass outline — bright blue-cyan for visibility
+            BottleShape(
+                bodyWidth: Self.tubeWidth,
+                bodyHeight: Self.bodyHeight,
+                neckWidth: Self.neckWidth,
+                neckHeight: Self.neckHeight,
+                capHeight: Self.capHeight,
+                bottomRadius: Self.bottomRadius
+            )
             .stroke(
-                Color.primary.opacity(0.3),
+                LinearGradient(
+                    colors: [
+                        Color(red: 0.35, green: 0.65, blue: 0.95).opacity(0.6),
+                        Color(red: 0.30, green: 0.55, blue: 0.85).opacity(0.4),
+                        Color(red: 0.25, green: 0.50, blue: 0.80).opacity(0.5),
+                    ],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                ),
                 lineWidth: Self.wallThickness
             )
-            .background(
-                BottleShape(cornerRadius: Self.cornerRadius)
-                    .fill(Color.primary.opacity(0.04))
-            )
+        }
+    }
+
+    // MARK: - Glass Front (on top of liquid — highlights)
+
+    private var glassFront: some View {
+        ZStack {
+            // Left edge highlight — vertical glass reflection line
+            RoundedRectangle(cornerRadius: Self.bottomRadius - 4)
+                .fill(
+                    LinearGradient(
+                        colors: [
+                            .white.opacity(0.0),
+                            .white.opacity(0.18),
+                            .white.opacity(0.08),
+                            .white.opacity(0.0),
+                        ],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                )
+                .frame(width: 4)
+                .padding(.leading, 6)
+                .padding(.trailing, Self.tubeWidth - 10)
+                .padding(.vertical, Self.neckHeight + Self.capHeight + 4)
+
+            // Right edge subtle reflection
+            RoundedRectangle(cornerRadius: Self.bottomRadius - 4)
+                .fill(
+                    LinearGradient(
+                        colors: [
+                            .white.opacity(0.0),
+                            .white.opacity(0.08),
+                            .white.opacity(0.03),
+                            .white.opacity(0.0),
+                        ],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                )
+                .frame(width: 3)
+                .padding(.leading, Self.tubeWidth - 10)
+                .padding(.trailing, 7)
+                .padding(.vertical, Self.neckHeight + Self.capHeight + 8)
+
+            // Top curved highlight for glass curvature
+            Ellipse()
+                .fill(.white.opacity(0.06))
+                .frame(width: Self.tubeWidth - 12, height: 20)
+                .offset(y: -(Self.tubeHeight / 2) + Self.neckHeight + Self.capHeight + 14)
+        }
+        .allowsHitTesting(false)
     }
 
     // MARK: - Liquid Stack
@@ -95,13 +193,60 @@ struct TubeView: View {
         VStack(spacing: 0) {
             Spacer(minLength: 0)
 
-            // liquids array is bottom-to-top; VStack renders top-to-bottom,
-            // so reverse to place the bottom liquid at the visual bottom.
-            ForEach(Array(tube.liquids.enumerated().reversed()), id: \.element.id) { _, liquid in
-                ColorPalette.color(for: liquid.groupId)
-                    .frame(height: Self.unitHeight * liquid.value)
+            let liquidWidth = Self.tubeWidth - Self.liquidInset * 2
+
+            // Liquids are bottom-to-top; VStack top-to-bottom so reverse.
+            ForEach(Array(tube.liquids.enumerated().reversed()), id: \.element.id) { index, liquid in
+                let isTopSegment = (index == tube.liquids.count - 1)
+                let segmentHeight = Self.unitHeight * liquid.value
+                let color = ColorPalette.color(for: liquid.groupId)
+
+                ZStack(alignment: .top) {
+                    // Main liquid body
+                    color
+                        .frame(height: segmentHeight)
+
+                    // Liquid highlight — left side shine through liquid
+                    HStack(spacing: 0) {
+                        color.opacity(0.0)
+                            .frame(width: 1)
+                        LinearGradient(
+                            colors: [
+                                .white.opacity(0.20),
+                                .white.opacity(0.05),
+                                .clear,
+                            ],
+                            startPoint: .leading,
+                            endPoint: .trailing
+                        )
+                        .frame(width: liquidWidth * 0.3)
+                        Spacer(minLength: 0)
+                    }
+                    .frame(height: segmentHeight)
+
+                    // Rounded top surface for the topmost liquid segment
+                    if isTopSegment && liquid.value > 0.3 {
+                        Ellipse()
+                            .fill(color.opacity(0.6))
+                            .frame(width: liquidWidth, height: 8)
+                            .offset(y: -4)
+                        Ellipse()
+                            .fill(.white.opacity(0.12))
+                            .frame(width: liquidWidth * 0.6, height: 4)
+                            .offset(y: -3)
+                    }
+                }
             }
         }
+        .frame(height: Self.bodyHeight - Self.liquidInset * 2)
+        .clipShape(
+            UnevenRoundedRectangle(
+                topLeadingRadius: 2,
+                bottomLeadingRadius: Self.bottomRadius - Self.liquidInset,
+                bottomTrailingRadius: Self.bottomRadius - Self.liquidInset,
+                topTrailingRadius: 2
+            )
+        )
     }
 
     // MARK: - Accessibility
@@ -130,48 +275,94 @@ struct TubeView: View {
 
 // MARK: - Bottle Shape
 
-/// Custom shape for the tube — open at top, rounded at bottom, straight sides.
+/// Custom path for a glass bottle with body, tapering neck, and cap/stopper.
 struct BottleShape: Shape {
-    let cornerRadius: CGFloat
+    let bodyWidth: CGFloat
+    let bodyHeight: CGFloat
+    let neckWidth: CGFloat
+    let neckHeight: CGFloat
+    let capHeight: CGFloat
+    let bottomRadius: CGFloat
 
     func path(in rect: CGRect) -> Path {
         var path = Path()
 
-        let left = rect.minX
-        let right = rect.maxX
-        let top = rect.minY
+        let totalHeight = bodyHeight + neckHeight + capHeight
+        let centerX = rect.midX
         let bottom = rect.maxY
-        let cr = min(cornerRadius, rect.width / 2)
+        let bodyTop = bottom - bodyHeight
+        let neckTop = bodyTop - neckHeight
+        let capTop = neckTop - capHeight
 
-        // Start at top-left (open top)
-        path.move(to: CGPoint(x: left, y: top))
+        let halfBody = bodyWidth / 2
+        let halfNeck = neckWidth / 2
+        let halfCap = (neckWidth + 6) / 2  // cap wider than neck
+        let cr = min(bottomRadius, halfBody)
 
-        // Left side down
-        path.addLine(to: CGPoint(x: left, y: bottom - cr))
-
-        // Bottom-left corner
+        // --- Cap (dark stopper) ---
+        let capCR: CGFloat = 4
+        path.move(to: CGPoint(x: centerX - halfCap, y: neckTop))
+        path.addLine(to: CGPoint(x: centerX - halfCap, y: capTop + capCR))
         path.addArc(
-            center: CGPoint(x: left + cr, y: bottom - cr),
-            radius: cr,
+            center: CGPoint(x: centerX - halfCap + capCR, y: capTop + capCR),
+            radius: capCR,
             startAngle: .degrees(180),
-            endAngle: .degrees(90),
-            clockwise: true
+            endAngle: .degrees(270),
+            clockwise: false
+        )
+        path.addLine(to: CGPoint(x: centerX + halfCap - capCR, y: capTop))
+        path.addArc(
+            center: CGPoint(x: centerX + halfCap - capCR, y: capTop + capCR),
+            radius: capCR,
+            startAngle: .degrees(270),
+            endAngle: .degrees(0),
+            clockwise: false
+        )
+        path.addLine(to: CGPoint(x: centerX + halfCap, y: neckTop))
+
+        // --- Body outline: right neck → body → bottom → body → left neck ---
+        path.move(to: CGPoint(x: centerX + halfNeck, y: neckTop))
+
+        // Smooth neck-to-body transition (right side)
+        path.addCurve(
+            to: CGPoint(x: centerX + halfBody, y: bodyTop + 12),
+            control1: CGPoint(x: centerX + halfNeck + 2, y: bodyTop - 2),
+            control2: CGPoint(x: centerX + halfBody, y: bodyTop + 2)
         )
 
-        // Bottom edge
-        path.addLine(to: CGPoint(x: right - cr, y: bottom))
+        // Right body side down
+        path.addLine(to: CGPoint(x: centerX + halfBody, y: bottom - cr))
 
         // Bottom-right corner
         path.addArc(
-            center: CGPoint(x: right - cr, y: bottom - cr),
+            center: CGPoint(x: centerX + halfBody - cr, y: bottom - cr),
             radius: cr,
-            startAngle: .degrees(90),
-            endAngle: .degrees(0),
-            clockwise: true
+            startAngle: .degrees(0),
+            endAngle: .degrees(90),
+            clockwise: false
         )
 
-        // Right side up
-        path.addLine(to: CGPoint(x: right, y: top))
+        // Bottom edge
+        path.addLine(to: CGPoint(x: centerX - halfBody + cr, y: bottom))
+
+        // Bottom-left corner
+        path.addArc(
+            center: CGPoint(x: centerX - halfBody + cr, y: bottom - cr),
+            radius: cr,
+            startAngle: .degrees(90),
+            endAngle: .degrees(180),
+            clockwise: false
+        )
+
+        // Left body side up
+        path.addLine(to: CGPoint(x: centerX - halfBody, y: bodyTop + 12))
+
+        // Smooth body-to-neck transition (left side)
+        path.addCurve(
+            to: CGPoint(x: centerX - halfNeck, y: neckTop),
+            control1: CGPoint(x: centerX - halfBody, y: bodyTop + 2),
+            control2: CGPoint(x: centerX - halfNeck - 2, y: bodyTop - 2)
+        )
 
         return path
     }

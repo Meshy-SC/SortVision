@@ -198,11 +198,13 @@ final class GameEngine {
 
     // MARK: - Pour Animation
 
-    /// Tilt angle for the pour (about 80°).
-    private let pourTiltAngle: CGFloat = 80.0 * .pi / 180.0
+    /// Tilt angle — ~90° to make tube roughly horizontal.
+    private let pourTiltAngle: CGFloat = 90.0 * .pi / 180.0
 
-    /// Height the tube lifts above rest before arcing.
-    private let arcLiftHeight: CGFloat = -50
+    /// Height to lift the tube (negative = up). With .bottom anchor,
+    /// we need the bottom of the tube to be well above the other tubes
+    /// so when tilted 90° the mouth swings over to the target's opening.
+    private let arcLiftHeight: CGFloat = -180
 
     private func performPour(from source: TubeState, to target: TubeState) {
         guard let sourceLiquid = source.topLiquid,
@@ -222,14 +224,9 @@ final class GameEngine {
         let colorGroupId = sourceLiquid.groupId
 
         // Direction: tilt toward target.
-        // Positive tiltSign means tilt clockwise (target is to the right).
         let isTargetRight = target.index > source.index
         let tiltSign: CGFloat = isTargetRight ? 1.0 : -1.0
         let signedTilt = tiltSign * pourTiltAngle
-
-        // Horizontal distance between source and target centre.
-        // We'll compute this from their indices and typical spacing.
-        // The view will overlay the actual position via offsets.
 
         pourAnimation = PourAnimation(
             sourceIndex: source.index,
@@ -240,13 +237,14 @@ final class GameEngine {
         Task { @MainActor in
             let frameDuration: UInt64 = 16_000_000 // ~60 fps (16ms)
 
-            // === Phase 1: Lift up ===
-            await animateValue(duration: 0.18, frameDuration: frameDuration) { t in
-                source.animationOffsetY = self.arcLiftHeight * t
+            // === Phase 1: Lift tube up high ===
+            await animateValue(duration: 0.22, frameDuration: frameDuration) { t in
+                let eased = Self.easeInOut(t)
+                source.animationOffsetY = self.arcLiftHeight * eased
             }
 
-            // === Phase 2: Tilt toward target ===
-            await animateValue(duration: 0.25, frameDuration: frameDuration) { t in
+            // === Phase 2: Tilt 90° — mouth swings over toward target ===
+            await animateValue(duration: 0.28, frameDuration: frameDuration) { t in
                 let eased = Self.easeInOut(t)
                 source.tiltAngle = signedTilt * eased
             }
@@ -263,7 +261,7 @@ final class GameEngine {
                 target.addLiquid(groupId: colorGroupId, value: 0)
             }
 
-            await animateValue(duration: 0.5, frameDuration: frameDuration) { t in
+            await animateValue(duration: 0.45, frameDuration: frameDuration) { t in
                 let eased = Self.easeInOut(t)
 
                 // Update liquid values
@@ -279,11 +277,13 @@ final class GameEngine {
 
             pourAnimation?.isStreaming = false
 
-            // === Phase 4: Untilt ===
+            // === Phase 4: Untilt + return horizontal ===
             let currentTilt = source.tiltAngle
+            let currentX = source.animationOffsetX
             await animateValue(duration: 0.22, frameDuration: frameDuration) { t in
                 let eased = Self.easeInOut(t)
                 source.tiltAngle = currentTilt * (1.0 - eased)
+                source.animationOffsetX = currentX * (1.0 - eased)
             }
 
             // === Phase 5: Return down ===
