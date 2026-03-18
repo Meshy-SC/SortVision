@@ -30,66 +30,26 @@ from pathlib import Path
 TUBE_CAPACITY = 4
 
 WORLDS = [
-    {
-        "name": "iron",
-        "colors_range": (3, 4),
-        "scramble_range": (15, 25),
-        "hidden_range": (0, 0),
-    },
-    {
-        "name": "bronze",
-        "colors_range": (4, 5),
-        "scramble_range": (25, 35),
-        "hidden_range": (0, 0),
-    },
-    {
-        "name": "silver",
-        "colors_range": (5, 6),
-        "scramble_range": (35, 50),
-        "hidden_range": (0, 0),
-    },
-    {
-        "name": "gold",
-        "colors_range": (6, 7),
-        "scramble_range": (50, 65),
-        "hidden_range": (0, 1),
-    },
-    {
-        "name": "platinum",
-        "colors_range": (7, 8),
-        "scramble_range": (65, 80),
-        "hidden_range": (0, 1),
-    },
-    {
-        "name": "emerald",
-        "colors_range": (8, 9),
-        "scramble_range": (80, 100),
-        "hidden_range": (1, 1),
-    },
-    {
-        "name": "diamond",
-        "colors_range": (9, 10),
-        "scramble_range": (100, 120),
-        "hidden_range": (1, 2),
-    },
-    {
-        "name": "master",
-        "colors_range": (10, 11),
-        "scramble_range": (120, 150),
-        "hidden_range": (1, 2),
-    },
-    {
-        "name": "grandmaster",
-        "colors_range": (11, 12),
-        "scramble_range": (150, 180),
-        "hidden_range": (2, 2),
-    },
-    {
-        "name": "legend",
-        "colors_range": (12, 14),
-        "scramble_range": (180, 250),
-        "hidden_range": (2, 3),
-    },
+    {"name": "iron",        "title": "Iron",        "subtitle": "The Forge",
+     "colors_range": (3, 4),   "scramble_range": (15, 25),   "hidden_range": (0, 0)},
+    {"name": "bronze",      "title": "Bronze",      "subtitle": "Age of Valor",
+     "colors_range": (4, 5),   "scramble_range": (25, 35),   "hidden_range": (0, 0)},
+    {"name": "silver",      "title": "Silver",      "subtitle": "Moonlit Trials",
+     "colors_range": (5, 6),   "scramble_range": (35, 50),   "hidden_range": (0, 0)},
+    {"name": "gold",        "title": "Gold",        "subtitle": "Crown Jewels",
+     "colors_range": (6, 7),   "scramble_range": (50, 65),   "hidden_range": (0, 1)},
+    {"name": "platinum",    "title": "Platinum",    "subtitle": "Ethereal Heights",
+     "colors_range": (7, 8),   "scramble_range": (65, 80),   "hidden_range": (0, 1)},
+    {"name": "emerald",     "title": "Emerald",     "subtitle": "Verdant Maze",
+     "colors_range": (8, 9),   "scramble_range": (80, 100),  "hidden_range": (1, 1)},
+    {"name": "diamond",     "title": "Diamond",     "subtitle": "Crystal Depths",
+     "colors_range": (9, 10),  "scramble_range": (100, 120), "hidden_range": (1, 2)},
+    {"name": "master",      "title": "Master",      "subtitle": "The Crucible",
+     "colors_range": (10, 11), "scramble_range": (120, 150), "hidden_range": (1, 2)},
+    {"name": "grandmaster", "title": "Grandmaster", "subtitle": "Shadow Realm",
+     "colors_range": (11, 12), "scramble_range": (150, 180), "hidden_range": (2, 2)},
+    {"name": "legend",      "title": "Legend",      "subtitle": "Hall of Fame",
+     "colors_range": (12, 14), "scramble_range": (180, 250), "hidden_range": (2, 3)},
 ]
 
 LEVELS_PER_WORLD = 100
@@ -325,11 +285,22 @@ def main():
     resources_dir = script_dir.parent / "Resources"
     resources_dir.mkdir(exist_ok=True)
 
-    # Delete old level files
-    old_files = [
+    # Delete ALL old level/solution files
+    old_patterns = [
         "levels.json", "levels-normal.json", "levels-hard.json", "levels-ex.json",
     ]
-    for f in old_files:
+    # Delete old puzzles-*.json and solutions-*.json
+    for f in resources_dir.glob("puzzles-*.json"):
+        f.unlink()
+        print(f"  🗑  Deleted old file: {f.name}")
+    for f in resources_dir.glob("solutions-*.json"):
+        f.unlink()
+        print(f"  🗑  Deleted old file: {f.name}")
+    # Delete old World*.json files
+    for f in resources_dir.glob("World*.json"):
+        f.unlink()
+        print(f"  🗑  Deleted old file: {f.name}")
+    for f in old_patterns:
         path = resources_dir / f
         if path.exists():
             path.unlink()
@@ -339,15 +310,19 @@ def main():
     total_generated = 0
 
     for world_idx, world in enumerate(WORLDS):
+        world_number = world_idx + 1
         world_name = world["name"]
+        world_title = world["title"]
+        world_subtitle = world["subtitle"]
         colors_lo, colors_hi = world["colors_range"]
         scramble_lo, scramble_hi = world["scramble_range"]
 
         puzzles = []
-        solutions = []
+        optimal_moves_list = []
+        solution_moves_list = []
 
         print(f"\n{'='*60}")
-        print(f"  World {world_idx + 1}: {world_name.upper()} "
+        print(f"  World {world_number}: {world_name.upper()} "
               f"({colors_lo}–{colors_hi} colors, "
               f"scramble {scramble_lo}–{scramble_hi})")
         print(f"{'='*60}")
@@ -361,13 +336,11 @@ def main():
             result = generate_puzzle(num_colors, scramble_depth, seen_hashes)
 
             if result is None:
-                # Relax: try fewer scramble moves
                 result = generate_puzzle(
                     num_colors, max(10, scramble_depth // 2), seen_hashes, max_attempts=500
                 )
 
             if result is None:
-                # Fallback: reduce colors
                 for fallback_colors in range(num_colors - 1, 2, -1):
                     result = generate_puzzle(
                         fallback_colors, scramble_depth // 2, seen_hashes, max_attempts=500
@@ -391,30 +364,34 @@ def main():
             }
             puzzles.append(puzzle_entry)
 
-            # Build solution entry
-            solution_entry = {
-                "no": local_no,
-                "moves": [list(m) for m in solution_moves],
-                "totalMoves": len(solution_moves),
-            }
-            solutions.append(solution_entry)
+            # Track optimal moves and solution
+            optimal_moves_list.append(len(solution_moves))
+            solution_moves_list.append([list(m) for m in solution_moves])
 
             total_generated += 1
             if (level_idx + 1) % 10 == 0:
                 print(f"  ✅ Generated {level_idx + 1}/{LEVELS_PER_WORLD} "
                       f"(last: {num_colors} colors, {len(solution_moves)} moves)")
 
-        # Write puzzle file
-        puzzle_file = resources_dir / f"puzzles-{world_name}.json"
+        # Write World{N}.json (puzzles — same format as Pushbox World{N}.json)
+        puzzle_file = resources_dir / f"World{world_number}.json"
         with open(puzzle_file, "w") as f:
             json.dump({"levels": puzzles}, f, separators=(",", ":"))
         print(f"  📄 Wrote {puzzle_file.name} ({len(puzzles)} levels)")
 
-        # Write solution file
-        solution_file = resources_dir / f"solutions-{world_name}.json"
-        with open(solution_file, "w") as f:
-            json.dump({"solutions": solutions}, f, separators=(",", ":"))
-        print(f"  📄 Wrote {solution_file.name} ({len(solutions)} solutions)")
+        # Write World{N}Data.json (metadata — mirrors Pushbox WorldData format)
+        world_data = {
+            "worldName": f"World{world_number}",
+            "title": world_title,
+            "subtitle": world_subtitle,
+            "optimalPushCounts": optimal_moves_list,
+            "solutions": solution_moves_list,
+        }
+        data_file = resources_dir / f"World{world_number}Data.json"
+        with open(data_file, "w") as f:
+            json.dump(world_data, f, separators=(",", ":"))
+        print(f"  📄 Wrote {data_file.name}")
+
 
     print(f"\n{'='*60}")
     print(f"  ✅ DONE: {total_generated} puzzles generated successfully")

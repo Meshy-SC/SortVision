@@ -1,5 +1,30 @@
 import Foundation
 import Observation
+
+// MARK: - WorldData Model
+
+/// Decoded from World{N}Data.json — mirrors Pushbox's WorldData format.
+private struct WorldData: Decodable {
+    let worldName: String
+    let title: String
+    let subtitle: String
+    let optimalPushCounts: [Int]
+    let solutions: [[Any]]?
+
+    private enum CodingKeys: String, CodingKey {
+        case worldName, title, subtitle, optimalPushCounts, solutions
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        worldName = try container.decode(String.self, forKey: .worldName)
+        title = try container.decode(String.self, forKey: .title)
+        subtitle = try container.decode(String.self, forKey: .subtitle)
+        optimalPushCounts = try container.decode([Int].self, forKey: .optimalPushCounts)
+        // Solutions can be complex nested arrays; skip decoding for now
+        solutions = nil
+    }
+}
 import WidgetKit
 
 /// Central game state manager responsible for level data and progress tracking.
@@ -39,6 +64,24 @@ final class GameManager {
     /// Stores any errors encountered during level loading for diagnostics.
     private(set) var levelLoadingErrors: [Stage: Error] = [:]
 
+    // MARK: - Star Rating & Optimal Moves
+
+    /// Optimal (par) move count for each global level number.
+    /// Loaded from World{N}Data.json files at init.
+    private var optimalMoves: [Int: Int] = [:]
+
+    /// Player's best (lowest) move count for each global level number.
+    /// Persisted to UserDefaults.
+    private var bestMoves: [Int: Int] = [:]
+
+    /// Player's earned star rating for each global level number.
+    /// Persisted to UserDefaults.
+    private var starRatings: [Int: Int] = [:]
+
+    /// UserDefaults keys for star/best-move persistence.
+    private static let bestMovesKey = "bestMoves"
+    private static let starRatingsKey = "starRatings"
+
     // MARK: - Observable State
 
     /// Highest completed global level number (0 if none).
@@ -63,7 +106,9 @@ final class GameManager {
 
         migrateFromLegacyProgress()
         loadAllLevels()
+        loadAllWorldData()
         loadCompletedLevel()
+        loadBestMoves()
     }
 
     // MARK: - Legacy Migration
@@ -122,6 +167,52 @@ final class GameManager {
                 stageLevels[stage] = []
             }
         }
+    }
+
+    /// Loads World{N}Data.json for each stage to populate optimal move counts.
+    private func loadAllWorldData() {
+        for stage in Stage.allCases {
+            let resourceName = stage.worldDataResourceName
+            guard let url = Bundle.main.url(forResource: resourceName, withExtension: "json") else {
+                continue
+            }
+
+            do {
+                let data = try Data(contentsOf: url)
+                let worldData = try JSONDecoder().decode(WorldData.self, from: data)
+                let offset = stage.rawValue * Stage.levelsPerStage
+                for (index, optimal) in worldData.optimalPushCounts.enumerated() {
+                    let globalNumber = offset + index + 1
+                    optimalMoves[globalNumber] = optimal
+                }
+            } catch {
+                // Non-fatal: stars just won't show for this world
+            }
+        }
+    }
+
+    /// Restores per-level best moves and star ratings from UserDefaults.
+    private func loadBestMoves() {
+        if let dict = UserDefaults.standard.dictionary(forKey: Self.bestMovesKey) as? [String: Int] {
+            bestMoves = Dictionary(uniqueKeysWithValues: dict.compactMap { key, value in
+                guard let intKey = Int(key) else { return nil }
+                return (intKey, value)
+            })
+        }
+        if let dict = UserDefaults.standard.dictionary(forKey: Self.starRatingsKey) as? [String: Int] {
+            starRatings = Dictionary(uniqueKeysWithValues: dict.compactMap { key, value in
+                guard let intKey = Int(key) else { return nil }
+                return (intKey, value)
+            })
+        }
+    }
+
+    /// Saves best moves and star ratings to UserDefaults.
+    private func saveBestMoves() {
+        let movesDict = Dictionary(uniqueKeysWithValues: bestMoves.map { (String($0.key), $0.value) })
+        let starsDict = Dictionary(uniqueKeysWithValues: starRatings.map { (String($0.key), $0.value) })
+        UserDefaults.standard.set(movesDict, forKey: Self.bestMovesKey)
+        UserDefaults.standard.set(starsDict, forKey: Self.starRatingsKey)
     }
 
     /// Loads and decodes levels from a single JSON resource file.
@@ -208,22 +299,75 @@ final class GameManager {
         level(globalNumber: globalNumber + 1) != nil
     }
 
+    // MARK: - Star Rating Queries
+
+    /// Returns the optimal (par) move count for a level, if known.
+    func optimalMoveCount(for globalNumber: Int) -> Int? {
+        optimalMoves[globalNumber]
+    }
+
+    /// Returns the player's best move count for a level, or nil if not played.
+    func bestMoveCount(for globalNumber: Int) -> Int? {
+        bestMoves[globalNumber]
+    }
+
+    /// Returns the player's star rating (0–3) for a level.
+    func starRating(for globalNumber: Int) -> Int {
+        starRatings[globalNumber] ?? 0
+    }
+
+    /// Calculates a star rating from move count vs optimal.
+    /// - 3 stars: moves ≤ optimal
+    /// - 2 stars: moves ≤ optimal × 1.5
+    /// - 1 star:  completed
+    static func calculateStars(moves: Int, optimal: Int?) -> Int {
+        guard let optimal, optimal > 0 else { return 1 }
+        if moves <= optimal { return 3 }
+        if moves <= Int(Double(optimal) * 1.5) { return 2 }
+        return 1
+    }
+
     // MARK: - Level Completion
 
-    /// Records a level as completed, advancing progress if it's the furthest level beaten.
+    /// Records a level as completed with the given move count.
     ///
-    /// Only updates if `number` exceeds the current highest completed level,
-    /// preventing regression of progress.
+    /// Updates progress, best move count, and star rating. Only advances
+    /// global progress if this is the furthest level beaten.
     ///
-    /// - Parameter number: The global level number that was completed.
-    func completeLevel(number: Int) {
+    /// - Parameters:
+    ///   - number: The global level number that was completed.
+    ///   - moves: Number of moves used to complete the level.
+    func completeLevel(number: Int, moves: Int) {
+        // Update global progress
         if number > completedLevel {
             completedLevel = number
             UserDefaults.standard.set(number, forKey: Self.completionKey)
-
-            // Update Home Screen widget with latest progress
             WidgetCenter.shared.reloadAllTimelines()
         }
+
+        // Update best move count (keep lowest)
+        if let existing = bestMoves[number] {
+            if moves < existing {
+                bestMoves[number] = moves
+            }
+        } else {
+            bestMoves[number] = moves
+        }
+
+        // Calculate and store star rating (keep highest)
+        let optimal = optimalMoves[number]
+        let newStars = Self.calculateStars(moves: moves, optimal: optimal)
+        let existingStars = starRatings[number] ?? 0
+        if newStars > existingStars {
+            starRatings[number] = newStars
+        }
+
+        saveBestMoves()
+    }
+
+    /// Legacy completion without move tracking (backward compatibility).
+    func completeLevel(number: Int) {
+        completeLevel(number: number, moves: 0)
     }
 }
 

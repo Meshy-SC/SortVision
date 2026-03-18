@@ -124,19 +124,15 @@ enum Stage: Int, CaseIterable, Codable, Sendable, Identifiable, Hashable {
     // MARK: - Resource Mapping
 
     /// JSON resource filename (without extension) for the stage's puzzle data.
+    /// Matches Pushbox naming: World1, World2, … World10.
     var levelResourceName: String {
-        switch self {
-        case .iron:        "puzzles-iron"
-        case .bronze:      "puzzles-bronze"
-        case .silver:      "puzzles-silver"
-        case .gold:        "puzzles-gold"
-        case .platinum:    "puzzles-platinum"
-        case .emerald:     "puzzles-emerald"
-        case .diamond:     "puzzles-diamond"
-        case .master:      "puzzles-master"
-        case .grandmaster: "puzzles-grandmaster"
-        case .legend:      "puzzles-legend"
-        }
+        "World\(rawValue + 1)"
+    }
+
+    /// JSON resource filename (without extension) for the stage's metadata/solutions.
+    /// Matches Pushbox naming: World1Data, World2Data, … World10Data.
+    var worldDataResourceName: String {
+        "World\(rawValue + 1)Data"
     }
 
     /// Whether this stage has level content shipped in the app bundle.
