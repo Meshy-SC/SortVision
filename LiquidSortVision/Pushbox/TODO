@@ -1,0 +1,206 @@
+# PushBox — Project TODO
+
+## Bug Fixes
+
+### Critical
+
+- [ ] **Purchase popover appears off-centre on visionOS.**
+  The store sheet anchor is displaced left or right instead of appearing directly in front
+  of the user. Investigate the popover attachment point in `GameToolbarOrnament` and
+  `SolutionCreditsStoreView`.
+
+- [ ] **Level Selector sheet lingers when tapping Next / Previous.**
+  The sheet should close immediately when the user navigates to the next or previous level.
+  Audit the `onChange` handler in `GameChangeHandlers` and ensure `isLevelSheetPresented`
+  is set to `false` before the level transition begins.
+
+## Gameplay
+
+- [ ] **Implement tap-to-move on the puzzle grid.** Learn from lego game and watch again their video, install and pay for their game
+  Allow the player to tap an empty floor tile to automatically pathfind and walk there.
+  Keep the D-Pad and swipe gestures as fallback input methods. Consider leveraging the
+  existing `GridPosition` model for pathfinding.
+
+- [ ] **Ensure the level is in a clean state before running a solution.**
+  If the player has made moves, the level should be reset to its initial state before
+  solution playback begins. Options: auto-reset silently, or present a confirmation
+  ("Reset and show solution?"). Add this step to `startSolution()` in the game view.
+
+- [ ] **Volume placement: add lock / unlock position toggle (visionOS).**
+  Placement logic already exists in `ImmersiveGameView+Placement.swift`. Add a
+  Lock / Unlock button to the ornament so users can reposition the board after initial
+  placement (reference: JigSpace behaviour).
+
+## Platform
+
+### macOS
+
+- [ ] **Fix app lifecycle on quit.**: Maybe that was already fixed for VisionOS at least. 
+  When the user closes the macOS window the game should fully terminate. Verify window-
+  close and right-click menu behaviour against the macOS HIG. Cross-check the reasons
+  from the previous App Store rejection and confirm each is resolved before resubmitting.
+
+### App Store
+
+  Should I add tvOS? does it worth it? challenging?
+
+## Input
+
+- [ ] **Hand gesture input for visionOS.**
+  Investigate spatial tap and pinch-to-select gestures via ARKit / RealityKit to allow
+  the user to move the player by tapping a target tile or swiping in the immersive space in direction of movement or using controllers
+  without using the D-Pad.
+
+## Localization
+
+- [ ] **Translate the app into additional languages.**
+  Audit all user-visible strings in SwiftUI views and `AppIntents` for `String(localized:)`
+  or `LocalizedStringResource` usage. Add `Localizable.xcstrings` and submit translations
+  for at minimum: French, German, Spanish, Japanese, and Simplified Chinese.
+
+## World Names (Approved)
+
+| #  | World    | Title         | Subtitle              |
+|----|----------|---------------|-----------------------|
+| 1  | World1   | Ember         | A spark ignites       |
+| 2  | World2   | Drift         | The current pulls     |
+| 3  | World3   | Forge         | Shaped by fire        |
+| 4  | World4   | Surge         | The tide rises        |
+| 5  | World5   | Labyrinth     | Paths twist deeper    |
+| 6  | World6   | Vortex        | Drawn to the core     |
+| 7  | World7   | Citadel       | Walls within walls    |
+| 8  | World8   | Abyss         | Beyond the edge       |
+| 9  | World9   | Zenith        | The highest peak      |
+| 10 | World10  | Omega         | The final test        |
+
+## Game Center — Leaderboards (App Store Connect)
+
+| Reference Name           | Leaderboard ID                      | Type    | Status              |
+|--------------------------|-------------------------------------|---------|---------------------|
+| PushBox Global Score     | fr.meshy.pushbox.globalscore        | Classic | ✅ Created          |
+| Ember Score (World 1)    | fr.meshy.pushbox.world1score        | Classic | ✅ Created          |
+| Drift Score (World 2)    | fr.meshy.pushbox.world2score        | Classic | ✅ Created          |
+| Forge Score (World 3)    | fr.meshy.pushbox.world3score        | Classic | ✅ Created          |
+| Surge Score (World 4)    | fr.meshy.pushbox.world4score        | Classic | ✅ Created          |
+
+## Game Center — Achievements (App Store Connect)
+
+Future-proof design: no per-world IDs. Uses generic milestone counting so new worlds
+can be added without changing achievements. Total: 1000 points (Apple maximum).
+
+| Achievement ID                           | Name              | Pts | Hidden | Pre-Earned Description                       | Earned Description                            |
+|------------------------------------------|-------------------|-----|--------|----------------------------------------------|-----------------------------------------------|
+| fr.meshy.pushbox.first_steps             | First Steps       | 5   | No     | Complete your first level                    | Completed your first level!                   |
+| fr.meshy.pushbox.ten_down                | Ten Down          | 15  | No     | Complete 10 levels                           | Completed 10 levels!                          |
+| fr.meshy.pushbox.fifty_solver            | Fifty Solver      | 25  | No     | Complete 50 levels                           | Completed 50 levels!                          |
+| fr.meshy.pushbox.century                 | Century           | 40  | No     | Complete 100 levels                          | Completed 100 levels!                         |
+| fr.meshy.pushbox.double_century          | Double Century    | 60  | No     | Complete 200 levels                          | Completed 200 levels!                         |
+| fr.meshy.pushbox.completionist           | Completionist     | 100 | No     | Complete every level in the game             | Completed every single level!                 |
+| fr.meshy.pushbox.world_conqueror         | World Conqueror   | 25  | No     | Complete all levels in any world             | Conquered an entire world!                    |
+| fr.meshy.pushbox.dual_explorer           | Dual Explorer     | 50  | No     | Complete all levels in any 2 worlds          | Conquered 2 worlds!                           |
+| fr.meshy.pushbox.globe_trotter           | Globe Trotter     | 100 | No     | Complete all levels in every world           | Conquered every world!                        |
+| fr.meshy.pushbox.star_collector          | Star Collector    | 15  | No     | Earn 100 stars                               | Collected 100 stars!                          |
+| fr.meshy.pushbox.star_hoarder            | Star Hoarder      | 40  | No     | Earn 500 stars                               | Hoarded 500 stars!                            |
+| fr.meshy.pushbox.shining_bright          | Shining Bright    | 50  | No     | Earn 1000 stars                              | 1000 stars shining bright!                    |
+| fr.meshy.pushbox.perfectionist           | Perfectionist     | 100 | No     | Earn 3 stars on every level                  | Earned every single star!                     |
+| fr.meshy.pushbox.world_master            | World Master      | 25  | No     | Earn 3 stars on all levels in any world      | Mastered an entire world!                     |
+| fr.meshy.pushbox.triple_master           | Triple Master     | 50  | No     | Earn 3 stars on all levels in any 3 worlds   | Mastered 3 worlds!                            |
+| fr.meshy.pushbox.absolute_master         | Absolute Master   | 100 | No     | Earn 3 stars on all levels in every world    | Achieved absolute mastery!                    |
+| fr.meshy.pushbox.optimal_solver          | Optimal Solver    | 10  | No     | Solve any level at the optimal push count    | Solved a level with perfect efficiency!       |
+| fr.meshy.pushbox.precision_expert        | Precision Expert  | 40  | No     | Solve 5 levels at optimal push count         | Solved 5 levels with perfect efficiency!      |
+| fr.meshy.pushbox.hidden_talent           | Hidden Talent     | 50  | Yes    | ???                                          | Solved 25 levels at optimal push count!       |
+| fr.meshy.pushbox.grand_master            | Grand Master      | 100 | Yes    | ???                                          | Reached the maximum global score!             |
+| **Total**                                |                   |**1000**|     |                                              |                                               |
+
+
+## Game Center — Challenges (App Store Connect)
+
+| Challenge Name           | Leaderboard                         | Repeatable |
+|--------------------------|-------------------------------------|------------|
+| Global Score Challenge   | fr.meshy.pushbox.globalscore        | Yes        |
+| Ember Challenge          | fr.meshy.pushbox.world1score        | Yes        |
+| Drift Challenge          | fr.meshy.pushbox.world2score        | Yes        |
+| Forge Challenge          | fr.meshy.pushbox.world3score        | Yes        |
+| Surge Challenge          | fr.meshy.pushbox.world4score        | Yes        |
+
+
+## Developer
+
+- [ ] **Clarify the encrypted-solutions workflow.**
+  Document the end-to-end pipeline: how to author plain-text solutions, run
+  `Scripts/encrypt_solutions.swift`, and embed the resulting ciphertext in the WorldData
+  JSON files. Add a README section or a header comment in `encrypt_solutions.swift`
+  describing each step, the required key material location, and how to verify output with
+  `SolutionCrypto.decrypt(_:)` in a unit test.
+
+- [ ] **Document how to run the unit test suite from Xcode.**
+  The `PushboxTests` target contains suites for game logic, services, data, and
+  integration. Add a section to `README.md` covering: select the `PushboxTests` scheme,
+  press ⌘U, and interpret results in the Test navigator.
+
+## Marketing
+
+- [ ] **Record new marketing videos using Simulator.** maybe also the photos assets. check if apple accept those. and add those tags on the images, learn from nominated games also improve icon...
+  Capture gameplay footage via the Xcode Simulator's screen-recording feature for all
+  supported platforms (visionOS, iOS, macOS). Verify video dimensions, length, and
+  content against the current App Store marketing guidelines before uploading.
+
+Improved in-app purchase UI on the three platforms:
+- A color base value badges minus percentages
+- In VisionOS, they are very large.
+
+- [ ] **Implement bulk-purchase discount UI.**
+  Surface a "best value" label or percentage savings callout on multi-credit packages
+  within `SolutionCreditsStoreView`. No new products are required; apply to existing
+  5-credit and 10-credit products.
+
+I need to think again about the colors used. Would like the best colors recommended by Apple human interface guidelines to be used together, not each one separate, together the three colors and sequence of the color of the gorgeous when they are together. Of course, each goal should have its own color. 
+
+While we added the world name and the level name that the user is playing for all platforms, remember that, for VisionOS/iOS, we haven't implemented that, so we have to think to add it. Maybe as an attachment, same like push number of pushes like this, somewhere in the game. Great, will not disturb the user. 
+
+Other professional trailer explaining the story of the Pushbox and why we need to do this, motivating users to go to the next level. Make it like a story, a journey. Mean for video trailer and also during play. 
+
+Make a 3D logo. 
+
+│ Solution playback on macOS has slightly choppy/stuttery player movement. The current fix uses a 50ms polling loop to check when isAnimating becomes false before proceeding to the next move. This introduces up to 50ms of random jitter        │
+│ between moves — the loop might notice completion immediately or up to 50ms late. On iOS/visionOS, playback is smooth.       
+
+I'm playing the solution in Mac OS. There are some performance issues while it works fine on iOS and VisionOS. 
+I noticed that we are still sometimes having this bug where the user can lose his movements solutions, not sure what could be root cause
+
+
+The phone still gets hot. I need to do this tracing in Apple 237 root code and fix it. 
+
+
+there a blue line on the bottom on ipad, not sure what's that. 
+
+when returning to levels, I cannot retunr to main menu
+
+
+Still, the zoom function when zooming in and out can be stuck. 
+
+
+wringle the solution button to invite the user to buy solution, when we are sure he is struggleing (multiple undos, delay...)
+
+
+when user solves 5 levels, we invite them to make a review for the app if they haven't already. 
+
+
+Add all common advices to lifeOS games advices:
+
+
+now it starts at 1x (which is very small), I should increase (double) the assets size, then we start 1x, then user can go 2x then if they click again 0.5X
+
+mirror MBVision ornmanent buttons behaviour (no hover initially) and icons
+
+
+I think I need to implement a python script that generate solutions for levels automatically same like other games instead of hardcoding them
+
+
+same in iOS and macOS user should know which world/level they are, maybe add them next to the push count attachemtnt, or maybe that's too much info? add that also to ParkVision
+
+In-app purchase for 10 solutions should be 50% instead of best value, same as park vision. 
+
+
+score keep only the best score in a level same like parkvision
+

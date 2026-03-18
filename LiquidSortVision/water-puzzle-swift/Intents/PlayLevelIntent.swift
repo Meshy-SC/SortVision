@@ -13,10 +13,10 @@ enum StageAppEnum: String, AppEnum, Sendable {
     case silver
     case gold
     case platinum
-    case diamond
     case emerald
-    case ruby
-    case obsidian
+    case diamond
+    case master
+    case grandmaster
     case legend
 
     static var typeDisplayRepresentation: TypeDisplayRepresentation {
@@ -30,10 +30,10 @@ enum StageAppEnum: String, AppEnum, Sendable {
             .silver: "Silver",
             .gold: "Gold",
             .platinum: "Platinum",
-            .diamond: "Diamond",
             .emerald: "Emerald",
-            .ruby: "Ruby",
-            .obsidian: "Obsidian",
+            .diamond: "Diamond",
+            .master: "Master",
+            .grandmaster: "Grandmaster",
             .legend: "Legend",
         ]
     }
@@ -41,32 +41,32 @@ enum StageAppEnum: String, AppEnum, Sendable {
     /// Converts to the app's internal `Stage` enum.
     var stage: Stage {
         switch self {
-        case .iron:     .iron
-        case .bronze:   .bronze
-        case .silver:   .silver
-        case .gold:     .gold
-        case .platinum: .platinum
-        case .diamond:  .diamond
-        case .emerald:  .emerald
-        case .ruby:     .ruby
-        case .obsidian: .obsidian
-        case .legend:   .legend
+        case .iron:        .iron
+        case .bronze:      .bronze
+        case .silver:      .silver
+        case .gold:        .gold
+        case .platinum:    .platinum
+        case .emerald:     .emerald
+        case .diamond:     .diamond
+        case .master:      .master
+        case .grandmaster: .grandmaster
+        case .legend:      .legend
         }
     }
 
     /// Creates from the app's internal `Stage` enum.
     init(from stage: Stage) {
         switch stage {
-        case .iron:     self = .iron
-        case .bronze:   self = .bronze
-        case .silver:   self = .silver
-        case .gold:     self = .gold
-        case .platinum: self = .platinum
-        case .diamond:  self = .diamond
-        case .emerald:  self = .emerald
-        case .ruby:     self = .ruby
-        case .obsidian: self = .obsidian
-        case .legend:   self = .legend
+        case .iron:        self = .iron
+        case .bronze:      self = .bronze
+        case .silver:      self = .silver
+        case .gold:        self = .gold
+        case .platinum:    self = .platinum
+        case .emerald:     self = .emerald
+        case .diamond:     self = .diamond
+        case .master:      self = .master
+        case .grandmaster: self = .grandmaster
+        case .legend:      self = .legend
         }
     }
 }

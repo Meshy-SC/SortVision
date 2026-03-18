@@ -10,19 +10,16 @@ import SwiftUI
 /// World 1: Iron (1–100) → World 2: Bronze (101–200) → …
 /// → World 10: Legend (901–1000)
 /// ```
-///
-/// Worlds 1–4 have level content shipped in the bundle. Worlds 5–10
-/// are reserved for future content.
 enum Stage: Int, CaseIterable, Codable, Sendable, Identifiable, Hashable {
     case iron = 0
     case bronze = 1
     case silver = 2
     case gold = 3
     case platinum = 4
-    case diamond = 5
-    case emerald = 6
-    case ruby = 7
-    case obsidian = 8
+    case emerald = 5
+    case diamond = 6
+    case master = 7
+    case grandmaster = 8
     case legend = 9
 
     var id: Int { rawValue }
@@ -38,80 +35,80 @@ enum Stage: Int, CaseIterable, Codable, Sendable, Identifiable, Hashable {
     /// Human-readable world name.
     var displayName: String {
         switch self {
-        case .iron:     "Iron"
-        case .bronze:   "Bronze"
-        case .silver:   "Silver"
-        case .gold:     "Gold"
-        case .platinum: "Platinum"
-        case .diamond:  "Diamond"
-        case .emerald:  "Emerald"
-        case .ruby:     "Ruby"
-        case .obsidian: "Obsidian"
-        case .legend:   "Legend"
+        case .iron:        "Iron"
+        case .bronze:      "Bronze"
+        case .silver:      "Silver"
+        case .gold:        "Gold"
+        case .platinum:    "Platinum"
+        case .emerald:     "Emerald"
+        case .diamond:     "Diamond"
+        case .master:      "Master"
+        case .grandmaster: "Grandmaster"
+        case .legend:      "Legend"
         }
     }
 
     /// Thematic subtitle for the world.
     var subtitle: String {
         switch self {
-        case .iron:     "The Forge"
-        case .bronze:   "Age of Valor"
-        case .silver:   "Moonlit Trials"
-        case .gold:     "Crown Jewels"
-        case .platinum: "Ethereal Heights"
-        case .diamond:  "Crystal Depths"
-        case .emerald:  "Verdant Maze"
-        case .ruby:     "Crimson Gauntlet"
-        case .obsidian: "Shadow Realm"
-        case .legend:   "Hall of Fame"
+        case .iron:        "The Forge"
+        case .bronze:      "Age of Valor"
+        case .silver:      "Moonlit Trials"
+        case .gold:        "Crown Jewels"
+        case .platinum:    "Ethereal Heights"
+        case .emerald:     "Verdant Maze"
+        case .diamond:     "Crystal Depths"
+        case .master:      "The Crucible"
+        case .grandmaster: "Shadow Realm"
+        case .legend:      "Hall of Fame"
         }
     }
 
     /// SF Symbol icon for the world.
     var iconName: String {
         switch self {
-        case .iron:     "hammer.fill"
-        case .bronze:   "shield.fill"
-        case .silver:   "star.fill"
-        case .gold:     "crown.fill"
-        case .platinum: "sparkles"
-        case .diamond:  "suit.diamond.fill"
-        case .emerald:  "leaf.fill"
-        case .ruby:     "flame.fill"
-        case .obsidian: "moon.fill"
-        case .legend:   "trophy.fill"
+        case .iron:        "hammer.fill"
+        case .bronze:      "shield.fill"
+        case .silver:      "star.fill"
+        case .gold:        "crown.fill"
+        case .platinum:    "sparkles"
+        case .emerald:     "leaf.fill"
+        case .diamond:     "suit.diamond.fill"
+        case .master:      "flame.fill"
+        case .grandmaster: "bolt.fill"
+        case .legend:      "trophy.fill"
         }
     }
 
     /// Theme color for the world, adapts to light/dark mode.
     var themeColor: Color {
         switch self {
-        case .iron:     .gray
-        case .bronze:   Color(red: 0.80, green: 0.50, blue: 0.20)
-        case .silver:   Color(red: 0.75, green: 0.75, blue: 0.78)
-        case .gold:     .yellow
-        case .platinum: .mint
-        case .diamond:  .cyan
-        case .emerald:  .green
-        case .ruby:     .red
-        case .obsidian: .indigo
-        case .legend:   .purple
+        case .iron:        .gray
+        case .bronze:      Color(red: 0.80, green: 0.50, blue: 0.20)
+        case .silver:      Color(red: 0.75, green: 0.75, blue: 0.78)
+        case .gold:        .yellow
+        case .platinum:    .mint
+        case .emerald:     .green
+        case .diamond:     .cyan
+        case .master:      .purple
+        case .grandmaster: .red
+        case .legend:      Color(red: 0.90, green: 0.75, blue: 0.10)
         }
     }
 
     /// Secondary gradient color for the world card.
     var secondaryColor: Color {
         switch self {
-        case .iron:     Color(red: 0.45, green: 0.45, blue: 0.50)
-        case .bronze:   Color(red: 0.60, green: 0.35, blue: 0.10)
-        case .silver:   Color(red: 0.55, green: 0.55, blue: 0.60)
-        case .gold:     Color(red: 0.85, green: 0.65, blue: 0.00)
-        case .platinum: Color(red: 0.40, green: 0.80, blue: 0.75)
-        case .diamond:  Color(red: 0.10, green: 0.60, blue: 0.80)
-        case .emerald:  Color(red: 0.10, green: 0.55, blue: 0.25)
-        case .ruby:     Color(red: 0.75, green: 0.10, blue: 0.15)
-        case .obsidian: Color(red: 0.20, green: 0.15, blue: 0.50)
-        case .legend:   Color(red: 0.50, green: 0.20, blue: 0.60)
+        case .iron:        Color(red: 0.45, green: 0.45, blue: 0.50)
+        case .bronze:      Color(red: 0.60, green: 0.35, blue: 0.10)
+        case .silver:      Color(red: 0.55, green: 0.55, blue: 0.60)
+        case .gold:        Color(red: 0.85, green: 0.65, blue: 0.00)
+        case .platinum:    Color(red: 0.40, green: 0.80, blue: 0.75)
+        case .emerald:     Color(red: 0.10, green: 0.55, blue: 0.25)
+        case .diamond:     Color(red: 0.10, green: 0.60, blue: 0.80)
+        case .master:      Color(red: 0.35, green: 0.10, blue: 0.55)
+        case .grandmaster: Color(red: 0.75, green: 0.10, blue: 0.15)
+        case .legend:      Color(red: 0.85, green: 0.65, blue: 0.00)
         }
     }
 
@@ -126,21 +123,25 @@ enum Stage: Int, CaseIterable, Codable, Sendable, Identifiable, Hashable {
 
     // MARK: - Resource Mapping
 
-    /// JSON resource filename (without extension). `nil` if content not yet available.
-    var levelResourceName: String? {
+    /// JSON resource filename (without extension) for the stage's puzzle data.
+    var levelResourceName: String {
         switch self {
-        case .iron:   "levels"
-        case .bronze: "levels-normal"
-        case .silver: "levels-hard"
-        case .gold:   "levels-ex"
-        default:      nil
+        case .iron:        "puzzles-iron"
+        case .bronze:      "puzzles-bronze"
+        case .silver:      "puzzles-silver"
+        case .gold:        "puzzles-gold"
+        case .platinum:    "puzzles-platinum"
+        case .emerald:     "puzzles-emerald"
+        case .diamond:     "puzzles-diamond"
+        case .master:      "puzzles-master"
+        case .grandmaster: "puzzles-grandmaster"
+        case .legend:      "puzzles-legend"
         }
     }
 
     /// Whether this stage has level content shipped in the app bundle.
-    var isAvailable: Bool {
-        levelResourceName != nil
-    }
+    /// All 10 worlds now have content.
+    var isAvailable: Bool { true }
 
     // MARK: - UserDefaults
 

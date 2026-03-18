@@ -101,14 +101,14 @@ final class GameManager {
 
     // MARK: - Level Loading
 
-    /// Loads level JSON files for all available stages from the app bundle.
+    /// Loads level JSON files for all stages from the app bundle.
     ///
-    /// Each stage with a `levelResourceName` maps to a JSON file. After decoding,
+    /// Each stage's `levelResourceName` maps to a JSON file. After decoding,
     /// levels are renumbered with global numbers (e.g., Iron levels 1–100 stay as-is,
     /// Bronze levels become 101–200, etc.).
     private func loadAllLevels() {
         for stage in Stage.allCases {
-            guard let resourceName = stage.levelResourceName else { continue }
+            let resourceName = stage.levelResourceName
 
             do {
                 var levels = try loadLevels(resource: resourceName)
