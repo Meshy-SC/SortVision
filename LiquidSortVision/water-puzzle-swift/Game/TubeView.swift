@@ -7,6 +7,9 @@ import SwiftUI
 /// - Visible glass reflections and edge highlights
 /// - Narrow neck with small dark cap
 /// - Vibrant liquid segments with rounded liquid surface
+///
+/// Note: Animation transforms (rotation, offset, pending lift) are applied
+/// externally by GameSceneView to allow base-frame capture for pour alignment.
 struct TubeView: View {
 
     // MARK: - Constants
@@ -30,7 +33,7 @@ struct TubeView: View {
     static let tubeHeight: CGFloat = bodyHeight + neckHeight + capHeight
 
     /// Corner radius for the bottle bottom.
-    static let bottomRadius: CGFloat = 16
+    static let bottomRadius: CGFloat = 22
 
     /// Glass wall stroke width.
     static let wallThickness: CGFloat = 2.5
@@ -49,11 +52,6 @@ struct TubeView: View {
     let tube: TubeState
     let onTap: () -> Void
 
-    /// Whether this tube is actively being animated by a pour.
-    private var isAnimating: Bool {
-        tube.tiltAngle != 0 || tube.animationOffsetX != 0 || tube.animationOffsetY != 0
-    }
-
     var body: some View {
         ZStack(alignment: .bottom) {
             // Glass bottle (behind liquid)
@@ -68,17 +66,7 @@ struct TubeView: View {
             glassFront
         }
         .frame(width: Self.tubeWidth, height: Self.tubeHeight)
-        // Pending lift (only when not in pour animation)
-        .offset(y: tube.isPending && !isAnimating ? -Self.pendingLift : 0)
-        // Pour animation: rotate FIRST around bottom (tube tilts at its base),
-        // THEN offset lifts the entire rotated tube upward.
-        .rotationEffect(.radians(tube.tiltAngle), anchor: .bottom)
-        .offset(x: tube.animationOffsetX, y: tube.animationOffsetY)
-        .animation(
-            isAnimating ? nil : .spring(response: 0.25, dampingFraction: 0.7),
-            value: tube.isPending
-        )
-        .zIndex(isAnimating ? 10 : 0)
+        .contentShape(Rectangle())
         .onTapGesture {
             onTap()
         }
@@ -103,9 +91,9 @@ struct TubeView: View {
             .fill(
                 LinearGradient(
                     colors: [
-                        Color(red: 0.12, green: 0.15, blue: 0.25).opacity(0.85),
-                        Color(red: 0.10, green: 0.13, blue: 0.22).opacity(0.80),
-                        Color(red: 0.08, green: 0.11, blue: 0.20).opacity(0.85),
+                        Color(red: 0.10, green: 0.14, blue: 0.28).opacity(0.85),
+                        Color(red: 0.09, green: 0.12, blue: 0.24).opacity(0.80),
+                        Color(red: 0.07, green: 0.10, blue: 0.22).opacity(0.85),
                     ],
                     startPoint: .top,
                     endPoint: .bottom
@@ -124,9 +112,9 @@ struct TubeView: View {
             .stroke(
                 LinearGradient(
                     colors: [
-                        Color(red: 0.35, green: 0.65, blue: 0.95).opacity(0.6),
-                        Color(red: 0.30, green: 0.55, blue: 0.85).opacity(0.4),
-                        Color(red: 0.25, green: 0.50, blue: 0.80).opacity(0.5),
+                        Color(red: 0.30, green: 0.60, blue: 0.90).opacity(0.65),
+                        Color(red: 0.25, green: 0.52, blue: 0.82).opacity(0.45),
+                        Color(red: 0.22, green: 0.48, blue: 0.78).opacity(0.55),
                     ],
                     startPoint: .topLeading,
                     endPoint: .bottomTrailing
@@ -146,17 +134,17 @@ struct TubeView: View {
                     LinearGradient(
                         colors: [
                             .white.opacity(0.0),
-                            .white.opacity(0.18),
-                            .white.opacity(0.08),
+                            .white.opacity(0.22),
+                            .white.opacity(0.10),
                             .white.opacity(0.0),
                         ],
                         startPoint: .top,
                         endPoint: .bottom
                     )
                 )
-                .frame(width: 4)
+                .frame(width: 5)
                 .padding(.leading, 6)
-                .padding(.trailing, Self.tubeWidth - 10)
+                .padding(.trailing, Self.tubeWidth - 11)
                 .padding(.vertical, Self.neckHeight + Self.capHeight + 4)
 
             // Right edge subtle reflection
@@ -165,8 +153,8 @@ struct TubeView: View {
                     LinearGradient(
                         colors: [
                             .white.opacity(0.0),
-                            .white.opacity(0.08),
-                            .white.opacity(0.03),
+                            .white.opacity(0.10),
+                            .white.opacity(0.04),
                             .white.opacity(0.0),
                         ],
                         startPoint: .top,
@@ -202,9 +190,13 @@ struct TubeView: View {
                 let color = ColorPalette.color(for: liquid.groupId)
 
                 ZStack(alignment: .top) {
-                    // Main liquid body
-                    color
-                        .frame(height: segmentHeight)
+                    // Main liquid body with subtle gradient for depth
+                    LinearGradient(
+                        colors: [color.opacity(0.92), color],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                    .frame(height: segmentHeight)
 
                     // Liquid highlight — left side shine through liquid
                     HStack(spacing: 0) {
@@ -212,8 +204,8 @@ struct TubeView: View {
                             .frame(width: 1)
                         LinearGradient(
                             colors: [
-                                .white.opacity(0.20),
-                                .white.opacity(0.05),
+                                .white.opacity(0.22),
+                                .white.opacity(0.06),
                                 .clear,
                             ],
                             startPoint: .leading,
@@ -227,13 +219,19 @@ struct TubeView: View {
                     // Rounded top surface for the topmost liquid segment
                     if isTopSegment && liquid.value > 0.3 {
                         Ellipse()
-                            .fill(color.opacity(0.6))
-                            .frame(width: liquidWidth, height: 8)
-                            .offset(y: -4)
+                            .fill(color.opacity(0.5))
+                            .frame(width: liquidWidth, height: 10)
+                            .offset(y: -5)
                         Ellipse()
-                            .fill(.white.opacity(0.12))
-                            .frame(width: liquidWidth * 0.6, height: 4)
-                            .offset(y: -3)
+                            .fill(
+                                LinearGradient(
+                                    colors: [.white.opacity(0.25), .white.opacity(0.05)],
+                                    startPoint: .top,
+                                    endPoint: .bottom
+                                )
+                            )
+                            .frame(width: liquidWidth * 0.65, height: 5)
+                            .offset(y: -4)
                     }
                 }
             }
@@ -287,7 +285,6 @@ struct BottleShape: Shape {
     func path(in rect: CGRect) -> Path {
         var path = Path()
 
-        let totalHeight = bodyHeight + neckHeight + capHeight
         let centerX = rect.midX
         let bottom = rect.maxY
         let bodyTop = bottom - bodyHeight
@@ -296,11 +293,11 @@ struct BottleShape: Shape {
 
         let halfBody = bodyWidth / 2
         let halfNeck = neckWidth / 2
-        let halfCap = (neckWidth + 6) / 2  // cap wider than neck
+        let halfCap = (neckWidth + 10) / 2  // cap wider than neck
         let cr = min(bottomRadius, halfBody)
 
         // --- Cap (dark stopper) ---
-        let capCR: CGFloat = 4
+        let capCR: CGFloat = 5
         path.move(to: CGPoint(x: centerX - halfCap, y: neckTop))
         path.addLine(to: CGPoint(x: centerX - halfCap, y: capTop + capCR))
         path.addArc(
@@ -323,11 +320,11 @@ struct BottleShape: Shape {
         // --- Body outline: right neck → body → bottom → body → left neck ---
         path.move(to: CGPoint(x: centerX + halfNeck, y: neckTop))
 
-        // Smooth neck-to-body transition (right side)
+        // Smooth neck-to-body transition (right side) — wider shoulder
         path.addCurve(
-            to: CGPoint(x: centerX + halfBody, y: bodyTop + 12),
-            control1: CGPoint(x: centerX + halfNeck + 2, y: bodyTop - 2),
-            control2: CGPoint(x: centerX + halfBody, y: bodyTop + 2)
+            to: CGPoint(x: centerX + halfBody, y: bodyTop + 18),
+            control1: CGPoint(x: centerX + halfNeck + 4, y: bodyTop - 2),
+            control2: CGPoint(x: centerX + halfBody, y: bodyTop + 4)
         )
 
         // Right body side down
@@ -355,13 +352,13 @@ struct BottleShape: Shape {
         )
 
         // Left body side up
-        path.addLine(to: CGPoint(x: centerX - halfBody, y: bodyTop + 12))
+        path.addLine(to: CGPoint(x: centerX - halfBody, y: bodyTop + 18))
 
-        // Smooth body-to-neck transition (left side)
+        // Smooth body-to-neck transition (left side) — wider shoulder
         path.addCurve(
             to: CGPoint(x: centerX - halfNeck, y: neckTop),
-            control1: CGPoint(x: centerX - halfBody, y: bodyTop + 2),
-            control2: CGPoint(x: centerX - halfNeck - 2, y: bodyTop - 2)
+            control1: CGPoint(x: centerX - halfBody, y: bodyTop + 4),
+            control2: CGPoint(x: centerX - halfNeck - 4, y: bodyTop - 2)
         )
 
         return path

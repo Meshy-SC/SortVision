@@ -37,45 +37,56 @@ struct GameSceneView: View {
             )
 
             ZStack {
-                // Background tap target for deselection
+                // Background tap target for deselection (full area, unscaled)
                 Color.clear
                     .contentShape(Rectangle())
                     .onTapGesture {
                         engine.handleBackgroundTap()
                     }
 
-                // Tube layout
-                VStack(spacing: layout.rowSpacing) {
-                    if layout.isTwoRows {
-                        let topCount = Int(ceil(Double(tubeCount) / 2.0))
-                        let bottomCount = tubeCount - topCount
+                // Scaled tube content + stream overlay
+                ZStack {
+                    // Tube layout
+                    VStack(spacing: layout.rowSpacing) {
+                        if layout.isTwoRows {
+                            let topCount = Int(ceil(Double(tubeCount) / 2.0))
+                            let bottomCount = tubeCount - topCount
 
-                        tubeRow(
-                            tubes: Array(engine.tubes.prefix(topCount)),
-                            spacing: layout.tubeSpacing
-                        )
+                            tubeRow(
+                                tubes: Array(engine.tubes.prefix(topCount)),
+                                spacing: layout.tubeSpacing
+                            )
 
-                        tubeRow(
-                            tubes: Array(engine.tubes.suffix(bottomCount)),
-                            spacing: layout.tubeSpacing
-                        )
-                    } else {
-                        tubeRow(
-                            tubes: engine.tubes,
-                            spacing: layout.tubeSpacing
-                        )
+                            tubeRow(
+                                tubes: Array(engine.tubes.suffix(bottomCount)),
+                                spacing: layout.tubeSpacing
+                            )
+                        } else {
+                            tubeRow(
+                                tubes: engine.tubes,
+                                spacing: layout.tubeSpacing
+                            )
+                        }
+                    }
+
+                    // Liquid stream overlay during pour
+                    if let anim = engine.pourAnimation, anim.isStreaming {
+                        liquidStreamOverlay(anim: anim)
                     }
                 }
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-
-                // Liquid stream overlay during pour
-                if let anim = engine.pourAnimation, anim.isStreaming {
-                    liquidStreamOverlay(anim: anim)
+                // Give content the unscaled natural size so tubes don't overflow
+                .frame(
+                    width: geometry.size.width / layout.scale,
+                    height: geometry.size.height / layout.scale
+                )
+                .coordinateSpace(name: sceneSpace)
+                .onPreferenceChange(TubeFramePreferenceKey.self) { frames in
+                    tubeFrames = frames
+                    engine.tubeFrames = frames
                 }
-            }
-            .coordinateSpace(name: sceneSpace)
-            .onPreferenceChange(TubeFramePreferenceKey.self) { frames in
-                tubeFrames = frames
+                .scaleEffect(layout.scale)
+                // Constrain layout frame to actual available size
+                .frame(width: geometry.size.width, height: geometry.size.height)
             }
         }
     }
@@ -88,6 +99,7 @@ struct GameSceneView: View {
                 TubeView(tube: tube) {
                     engine.handleTubeTap(tube)
                 }
+                // Capture base frame BEFORE animation transforms
                 .background(
                     GeometryReader { geo in
                         Color.clear
@@ -97,6 +109,15 @@ struct GameSceneView: View {
                             )
                     }
                 )
+                // Animation transforms applied externally for base-frame capture
+                .offset(y: tube.isPending && !tube.isAnimating ? -TubeView.pendingLift : 0)
+                .rotationEffect(.radians(tube.tiltAngle), anchor: .center)
+                .offset(x: tube.animationOffsetX, y: tube.animationOffsetY)
+                .animation(
+                    tube.isAnimating ? nil : .spring(response: 0.25, dampingFraction: 0.7),
+                    value: tube.isPending
+                )
+                .zIndex(tube.isAnimating ? 10 : 0)
             }
         }
     }
@@ -113,34 +134,34 @@ struct GameSceneView: View {
         let offsetX = sourceTube?.animationOffsetX ?? 0
         let offsetY = sourceTube?.animationOffsetY ?? 0
 
-        // With .bottom anchor, the rotation pivot is at the bottom-center.
-        // The mouth/lip is at the top of the tube (tubeHeight above the anchor).
-        let tubeHeight = sourceFrame.height
+        // With .center anchor, the rotation pivot is at the center of the tube.
+        // The mouth (neck opening) is tubeHeight/2 - capHeight above center.
+        let mouthDist = TubeView.tubeHeight / 2 - TubeView.capHeight
 
-        // Top-centre relative to bottom-centre (anchor point)
+        // Mouth position relative to center (anchor point)
         let localX: CGFloat = 0
-        let localY: CGFloat = -tubeHeight
+        let localY: CGFloat = -mouthDist
 
-        // Rotate around the bottom-centre anchor
+        // Rotate around the center anchor
         let cosA = cos(tiltAngle)
         let sinA = sin(tiltAngle)
         let rotatedX = localX * cosA - localY * sinA
         let rotatedY = localX * sinA + localY * cosA
 
-        // Bottom-center of tube in scene coords (with animation offsets)
+        // Center of tube in scene coords (with animation offsets)
         let anchorPoint = CGPoint(
             x: sourceFrame.midX + offsetX,
-            y: sourceFrame.maxY + offsetY
+            y: sourceFrame.midY + offsetY
         )
         let sourceLip = CGPoint(
             x: anchorPoint.x + rotatedX,
             y: anchorPoint.y + rotatedY
         )
 
-        // Target opening: top-centre of the target tube
+        // Target opening: into the body of the target tube for a visible stream
         let targetOpening = CGPoint(
             x: targetFrame.midX,
-            y: targetFrame.minY
+            y: targetFrame.minY + TubeView.capHeight + TubeView.neckHeight + 20
         )
 
         let streamColor = ColorPalette.color(for: anim.colorGroupId)
@@ -160,6 +181,7 @@ struct GameSceneView: View {
         let isTwoRows: Bool
         let tubeSpacing: CGFloat
         let rowSpacing: CGFloat
+        let scale: CGFloat
     }
 
     private func calculateLayout(tubeCount: Int, availableSize: CGSize) -> LayoutInfo {
@@ -172,18 +194,26 @@ struct GameSceneView: View {
             rowCount = tubeCount
         }
 
-        let totalTubeWidth = CGFloat(rowCount) * TubeView.tubeWidth
-        let availableSpacing = availableSize.width - totalTubeWidth - 32
-        let maxSpacing: CGFloat = 14
-        let tubeSpacing = max(4, min(maxSpacing, availableSpacing / CGFloat(max(rowCount - 1, 1))))
-
-        // More row spacing for taller bottles
+        let tubeSpacing: CGFloat = 10
         let rowSpacing: CGFloat = isTwoRows ? 40 : 0
+
+        // Natural content size at 1x scale
+        let contentWidth = CGFloat(rowCount) * TubeView.tubeWidth
+            + CGFloat(max(rowCount - 1, 0)) * tubeSpacing
+        let numberOfRows = CGFloat(isTwoRows ? 2 : 1)
+        let contentHeight = numberOfRows * TubeView.tubeHeight + rowSpacing
+
+        // Scale to fit within available space (with small margin)
+        let margin: CGFloat = 16
+        let horizontalScale = availableSize.width / (contentWidth + margin)
+        let verticalScale = availableSize.height / (contentHeight + margin)
+        let scale = min(min(horizontalScale, verticalScale), 1.0)
 
         return LayoutInfo(
             isTwoRows: isTwoRows,
             tubeSpacing: tubeSpacing,
-            rowSpacing: rowSpacing
+            rowSpacing: rowSpacing,
+            scale: scale
         )
     }
 }

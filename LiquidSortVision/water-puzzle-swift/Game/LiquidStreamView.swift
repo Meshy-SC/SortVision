@@ -16,7 +16,7 @@ struct LiquidStreamView: View {
     let progress: CGFloat
 
     /// Width of the liquid stream.
-    private let streamWidth: CGFloat = 8
+    private let streamWidth: CGFloat = 6
 
     var body: some View {
         Canvas { context, size in
@@ -67,15 +67,21 @@ struct LiquidStreamView: View {
             )
             context.fill(Ellipse().path(in: dripRect), with: .color(color))
 
-            // Small splash effect at target
-            let splashSize = 6.0 * streamThickness
-            let splashRect = CGRect(
-                x: to.x - splashSize / 2,
-                y: to.y - splashSize,
-                width: splashSize,
-                height: splashSize
-            )
-            context.fill(Ellipse().path(in: splashRect), with: .color(color.opacity(0.4)))
+            // Splash droplets at target
+            for i in 0..<4 {
+                let angle = Double(i) * .pi / 2.0 + .pi / 4.0
+                let radius = 8.0 * streamThickness
+                let dropSize = 3.5 * streamThickness
+                let dropX = to.x + radius * cos(angle)
+                let dropY = to.y - radius * abs(sin(angle)) - 2
+                let dropRect = CGRect(
+                    x: dropX - dropSize / 2,
+                    y: dropY - dropSize / 2,
+                    width: dropSize,
+                    height: dropSize
+                )
+                context.fill(Ellipse().path(in: dropRect), with: .color(color.opacity(0.3)))
+            }
         }
         .allowsHitTesting(false)
     }

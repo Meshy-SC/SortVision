@@ -1,3 +1,4 @@
+import CoreGraphics
 import Foundation
 import Observation
 
@@ -41,6 +42,11 @@ final class TubeState: Identifiable {
 
     /// Rotation angle (radians) applied during pour (tilt).
     var tiltAngle: CGFloat = 0
+
+    /// Whether this tube is currently in a pour animation.
+    var isAnimating: Bool {
+        tiltAngle != 0 || animationOffsetX != 0 || animationOffsetY != 0
+    }
 
     init(index: Int) {
         self.index = index
@@ -113,6 +119,10 @@ final class GameEngine {
 
     /// Active pour animation info for the stream overlay.
     private(set) var pourAnimation: PourAnimation? = nil
+
+    /// Base tube frames in scene coordinates, used for pour mouth alignment.
+    /// Updated by the scene view. Ignored by observation to prevent extra renders.
+    @ObservationIgnored var tubeFrames: [Int: CGRect] = [:]
 
     enum GameState {
         case idle, playing, over
@@ -198,13 +208,8 @@ final class GameEngine {
 
     // MARK: - Pour Animation
 
-    /// Tilt angle — ~90° to make tube roughly horizontal.
-    private let pourTiltAngle: CGFloat = 90.0 * .pi / 180.0
-
-    /// Height to lift the tube (negative = up). With .bottom anchor,
-    /// we need the bottom of the tube to be well above the other tubes
-    /// so when tilted 90° the mouth swings over to the target's opening.
-    private let arcLiftHeight: CGFloat = -180
+    /// Tilt angle — slightly past horizontal for a natural pour.
+    private let pourTiltAngle: CGFloat = 95.0 * .pi / 180.0
 
     private func performPour(from source: TubeState, to target: TubeState) {
         guard let sourceLiquid = source.topLiquid,
@@ -223,10 +228,32 @@ final class GameEngine {
 
         let colorGroupId = sourceLiquid.groupId
 
-        // Direction: tilt toward target.
-        let isTargetRight = target.index > source.index
+        // Get base frames for mouth-alignment positioning
+        let sourceFrame = tubeFrames[source.index] ?? .zero
+        let targetFrame = tubeFrames[target.index] ?? .zero
+
+        // Direction: tilt toward target (use frame positions for two-row support).
+        let isTargetRight = targetFrame.midX >= sourceFrame.midX
         let tiltSign: CGFloat = isTargetRight ? 1.0 : -1.0
         let signedTilt = tiltSign * pourTiltAngle
+
+        // Distance from tube center to neck opening (pour point).
+        // With .center anchor, rotation pivots around the tube's geometric center.
+        let mouthDist = TubeView.tubeHeight / 2 - TubeView.capHeight  // 76
+
+        // Target mouth (neck opening of the target tube)
+        let targetMouthX = targetFrame.midX
+        let targetMouthY = targetFrame.midY - mouthDist
+
+        // Final offsets for perfect mouth alignment at the end of tilt.
+        // After rotating around center and applying offset:
+        //   mouthX = sourceFrame.midX + offsetX + mouthDist * sin(tilt)
+        //   mouthY = sourceFrame.midY + offsetY - mouthDist * cos(tilt)
+        let finalOffsetX = targetMouthX - sourceFrame.midX - mouthDist * sin(signedTilt)
+        let finalOffsetY = targetMouthY - sourceFrame.midY + mouthDist * cos(signedTilt)
+
+        // Prevent isPending spring by marking as animating immediately
+        source.animationOffsetY = -0.01
 
         pourAnimation = PourAnimation(
             sourceIndex: source.index,
@@ -237,16 +264,21 @@ final class GameEngine {
         Task { @MainActor in
             let frameDuration: UInt64 = 16_000_000 // ~60 fps (16ms)
 
-            // === Phase 1: Lift tube up high ===
+            // === Phase 1: Lift tube center well above other tubes ===
+            let liftHeight: CGFloat = -130
             await animateValue(duration: 0.22, frameDuration: frameDuration) { t in
                 let eased = Self.easeInOut(t)
-                source.animationOffsetY = self.arcLiftHeight * eased
+                source.animationOffsetY = liftHeight * eased
             }
 
-            // === Phase 2: Tilt 90° — mouth swings over toward target ===
+            // === Phase 2: Tilt and align mouth with target ===
+            // From the lifted position, tilt to pour angle while moving
+            // horizontally so the mouth ends up at the target's neck opening.
             await animateValue(duration: 0.28, frameDuration: frameDuration) { t in
                 let eased = Self.easeInOut(t)
                 source.tiltAngle = signedTilt * eased
+                source.animationOffsetX = finalOffsetX * eased
+                source.animationOffsetY = liftHeight + (finalOffsetY - liftHeight) * eased
             }
 
             // === Phase 3: Pour with stream ===
@@ -277,19 +309,16 @@ final class GameEngine {
 
             pourAnimation?.isStreaming = false
 
-            // === Phase 4: Untilt + return horizontal ===
+            // === Phase 4: Return to original position ===
             let currentTilt = source.tiltAngle
-            let currentX = source.animationOffsetX
-            await animateValue(duration: 0.22, frameDuration: frameDuration) { t in
+            let currentOffsetX = source.animationOffsetX
+            let currentOffsetY = source.animationOffsetY
+
+            await animateValue(duration: 0.32, frameDuration: frameDuration) { t in
                 let eased = Self.easeInOut(t)
                 source.tiltAngle = currentTilt * (1.0 - eased)
-                source.animationOffsetX = currentX * (1.0 - eased)
-            }
-
-            // === Phase 5: Return down ===
-            let currentLift = source.animationOffsetY
-            await animateValue(duration: 0.18, frameDuration: frameDuration) { t in
-                source.animationOffsetY = currentLift * (1.0 - t)
+                source.animationOffsetX = currentOffsetX * (1.0 - eased)
+                source.animationOffsetY = currentOffsetY * (1.0 - eased)
             }
 
             // === Clean up ===
