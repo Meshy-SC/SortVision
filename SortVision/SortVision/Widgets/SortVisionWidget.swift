@@ -28,7 +28,7 @@ struct SortVisionTimelineProvider: TimelineProvider {
     func getTimeline(in context: Context, completion: @escaping (Timeline<SortVisionWidgetEntry>) -> Void) {
         let entry = createEntry()
         // Refresh in 1 hour; actual updates happen via WidgetCenter reload
-        let nextUpdate = Calendar.current.date(byAdding: .hour, value: 1, to: .now)!
+        let nextUpdate = Calendar.current.date(byAdding: .hour, value: 1, to: .now) ?? .now.addingTimeInterval(3600)
         let timeline = Timeline(entries: [entry], policy: .after(nextUpdate))
         completion(timeline)
     }

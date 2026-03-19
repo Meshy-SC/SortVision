@@ -16,6 +16,7 @@ struct GameplayView: View {
     @State private var engine: GameEngine?
     @State private var showLevelComplete = false
     @State private var completionMoves: Int = 0
+    @State private var completionStarDelta: Int = 0
 
     private var localNumber: Int {
         Stage.localLevelNumber(for: level.number)
@@ -42,6 +43,7 @@ struct GameplayView: View {
                         level: level,
                         moveCount: completionMoves,
                         parMoves: gameManager.optimalMoveCount(for: level.number),
+                        starDelta: completionStarDelta,
                         path: $path
                     )
                     .transition(
@@ -57,7 +59,7 @@ struct GameplayView: View {
             if let engine, !showLevelComplete {
                 GameToolbar(
                     canGoToPreviousLevel: hasPreviousLevel,
-                    canGoToNextLevel: gameManager.hasNextLevel(after: level.number),
+                    canGoToNextLevel: gameManager.hasNextLevel(after: level.number) && !gameManager.isLevelLocked(level.number + 1),
                     canUndo: engine.canUndo,
                     onPrevious: { navigateToPreviousLevel() },
                     onRestart: {
@@ -129,7 +131,10 @@ struct GameplayView: View {
             showLevelComplete = true
         }
         gameEngine.onSaveProgress = { levelNumber, moves in
+            let previousStars = gameManager.starRating(for: levelNumber)
             gameManager.completeLevel(number: levelNumber, moves: moves)
+            let currentStars = gameManager.starRating(for: levelNumber)
+            completionStarDelta = currentStars - previousStars
         }
 
         gameEngine.setup()

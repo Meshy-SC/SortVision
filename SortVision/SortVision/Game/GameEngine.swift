@@ -119,6 +119,9 @@ final class GameEngine {
     /// Undo history: snapshots of tube liquid contents before each pour.
     private var undoHistory: [[[Liquid]]] = []
 
+    /// Active pour animation task, cancelled on restart to prevent stale state mutations.
+    private var pourTask: Task<Void, Never>?
+
     /// Whether the player can undo a move.
     var canUndo: Bool { !undoHistory.isEmpty && gameState == .playing && !isTransferring }
 
@@ -273,7 +276,7 @@ final class GameEngine {
             colorGroupId: colorGroupId
         )
 
-        Task { @MainActor in
+        pourTask = Task { @MainActor in
             let frameDuration: UInt64 = 16_000_000 // ~60 fps (16ms)
 
             // === Phase 1: Lift tube center well above other tubes ===
@@ -282,6 +285,7 @@ final class GameEngine {
                 let eased = Self.easeInOut(t)
                 source.animationOffsetY = liftHeight * eased
             }
+            guard !Task.isCancelled else { return }
 
             // === Phase 2: Tilt and align above target ===
             // From the lifted position, tilt to pour angle while moving
@@ -292,6 +296,7 @@ final class GameEngine {
                 source.animationOffsetX = finalOffsetX * eased
                 source.animationOffsetY = liftHeight + (finalOffsetY - liftHeight) * eased
             }
+            guard !Task.isCancelled else { return }
 
             // === Phase 3: Pour with stream ===
             SoundManager.shared.play(.water)
@@ -318,6 +323,7 @@ final class GameEngine {
 
                 self.pourAnimation?.pourProgress = eased
             }
+            guard !Task.isCancelled else { return }
 
             pourAnimation?.isStreaming = false
 
@@ -362,6 +368,7 @@ final class GameEngine {
     ) async {
         let totalFrames = Int(duration / (Double(frameDuration) / 1_000_000_000.0))
         for frame in 1...max(totalFrames, 1) {
+            guard !Task.isCancelled else { return }
             let t = CGFloat(frame) / CGFloat(totalFrames)
             update(min(t, 1.0))
             try? await Task.sleep(nanoseconds: frameDuration)
@@ -417,6 +424,8 @@ final class GameEngine {
     // MARK: - Restart
 
     func restart() {
+        pourTask?.cancel()
+        pourTask = nil
         for tube in tubes {
             tube.resetAnimation()
         }

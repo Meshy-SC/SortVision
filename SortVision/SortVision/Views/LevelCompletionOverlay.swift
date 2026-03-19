@@ -11,6 +11,7 @@ struct LevelCompletionOverlay: View {
     let level: Level
     let moveCount: Int
     let parMoves: Int?
+    let starDelta: Int
     @Binding var path: NavigationPath
     @Environment(GameManager.self) private var gameManager
 
@@ -34,9 +35,9 @@ struct LevelCompletionOverlay: View {
         GameManager.calculateStars(moves: moveCount, optimal: parMoves)
     }
 
-    /// Score gained is based on star rating.
+    /// Score gained is the actual delta from the previous best star rating.
     private var scoreGained: Int {
-        stars * 100
+        starDelta * 100
     }
 
     /// Total score across all levels.

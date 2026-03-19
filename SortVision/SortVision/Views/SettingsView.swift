@@ -288,15 +288,14 @@ struct SettingsView: View {
 
 private struct AudioSettingsView: View {
 
-    /// Reads/writes the sound preference directly via UserDefaults,
-    /// using the same key as `GameManager` and `SoundManager`.
-    @AppStorage(GameManager.soundEnabledKey) private var isSoundOn: Bool = true
+    @Environment(GameManager.self) private var gameManager
 
     var body: some View {
+        @Bindable var gameManager = gameManager
         List {
             Section("Sound Effects") {
-                Toggle(isOn: $isSoundOn) {
-                    Label("All Sound Effects", systemImage: isSoundOn ? "speaker.wave.2.fill" : "speaker.slash.fill")
+                Toggle(isOn: $gameManager.soundEnabled) {
+                    Label("All Sound Effects", systemImage: gameManager.soundEnabled ? "speaker.wave.2.fill" : "speaker.slash.fill")
                 }
             }
         }

@@ -63,12 +63,14 @@ struct RootNavigationView: View {
 
     /// Handles navigation requests from App Intents via `DeepLinkManager`.
     private func handlePendingDeepLink() {
-        guard let globalNumber = deepLinkManager.pendingLevel,
-              let stage = Stage.stage(for: globalNumber),
-              let level = gameManager.level(globalNumber: globalNumber)
+        guard let globalNumber = deepLinkManager.pendingLevel else { return }
+        deepLinkManager.pendingLevel = nil
+
+        guard let stage = Stage.stage(for: globalNumber),
+              let level = gameManager.level(globalNumber: globalNumber),
+              !gameManager.isLevelLocked(globalNumber)
         else { return }
 
-        deepLinkManager.pendingLevel = nil
         navigateToLevel(stage: stage, level: level)
     }
 
