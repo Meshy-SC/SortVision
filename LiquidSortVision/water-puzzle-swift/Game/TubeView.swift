@@ -54,7 +54,7 @@ struct TubeView: View {
     static let liquidInset: CGFloat = wallThickness + 1.5
 
     /// Visible gap between the pouring lip and the target tube while streaming.
-    static let pourClearance: CGFloat = 24
+    static let pourClearance: CGFloat = 36
 
     /// Offset from the tube center to the neck opening center in local coordinates.
     static func mouthCenterOffset(scale: CGFloat) -> CGPoint {
@@ -78,6 +78,15 @@ struct TubeView: View {
         return CGPoint(
             x: tiltSign * rimHalfWidth * scale,
             y: lipCenter.y
+        )
+    }
+
+    /// Offset from the tube center to the inner opening where the liquid exits.
+    static func streamOutletOffset(toward tiltSign: CGFloat, scale: CGFloat) -> CGPoint {
+        let mouthCenter = mouthCenterOffset(scale: scale)
+        return CGPoint(
+            x: tiltSign * openingHalfWidth * scale,
+            y: mouthCenter.y + wallThickness * 0.5 * scale
         )
     }
 

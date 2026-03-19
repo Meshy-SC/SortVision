@@ -2,9 +2,8 @@ import SwiftUI
 
 /// A view that draws an animated liquid stream between two points.
 ///
-/// The stream is a thick colored line with a natural gravity-affected curve
-/// from the source tube's lip down to the target tube's opening.
-/// Includes a glow effect and drip blob for realism.
+/// The stream is a thick colored line with a controlled downward curve
+/// from the source tube lip to the target tube lip.
 struct LiquidStreamView: View {
     /// Start point in the coordinate space (source tube lip).
     let from: CGPoint
@@ -70,25 +69,23 @@ struct LiquidStreamView: View {
         return 1.0
     }
 
-    /// Creates a curved path from source down to target with a natural gravity droop.
+    /// Creates a restrained pour path with a vertical start and finish so the
+    /// liquid reads as a controlled flow instead of a spray arc.
     private func streamPath() -> Path {
         var path = Path()
         path.move(to: from)
 
-        let dx = to.x - from.x
         let dy = to.y - from.y
-        let downwardLead = max(dy * 0.22, 8)
-        let settleLift = min(max(abs(dy) * 0.12, 4), 10)
+        let initialDrop = min(max(dy * 0.35, 12), 26)
+        let finalApproach = min(max(dy * 0.22, 8), 18)
 
-        // Keep the stream close to the direct pour path so it reads as a controlled flow,
-        // not a spray or scattering arc.
         let cp1 = CGPoint(
-            x: from.x + dx * 0.15,
-            y: from.y + downwardLead
+            x: from.x,
+            y: from.y + initialDrop
         )
         let cp2 = CGPoint(
-            x: from.x + dx * 0.8,
-            y: to.y - settleLift
+            x: to.x,
+            y: to.y - finalApproach
         )
 
         path.addCurve(to: to, control1: cp1, control2: cp2)

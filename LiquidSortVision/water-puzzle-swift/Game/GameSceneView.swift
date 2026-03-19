@@ -135,10 +135,10 @@ struct GameSceneView: View {
             translationX: sourceTube?.animationOffsetX ?? 0,
             translationY: sourceTube?.animationOffsetY ?? 0
         )
-        let targetMouth = TubeView.mouthPoint(in: targetFrame, scale: tubeScale)
+        let targetLip = TubeView.lipPoint(in: targetFrame, scale: tubeScale)
 
         let streamFrom = sourceLip
-        let streamTo = targetMouth
+        let streamTo = targetLip
 
         let streamColor = ColorPalette.color(for: anim.colorGroupId)
 
