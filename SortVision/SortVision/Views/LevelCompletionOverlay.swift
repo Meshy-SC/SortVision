@@ -141,7 +141,11 @@ struct LevelCompletionOverlay: View {
                                 .foregroundStyle(.white)
                                 .padding(.horizontal, 32)
                                 .padding(.vertical, 12)
+                                #if os(visionOS)
                                 .background(.ultraThinMaterial, in: Capsule())
+                                #else
+                                .glassEffect(in: Capsule())
+                                #endif
                         }
                         .buttonStyle(.plain)
                         .keyboardShortcut(.defaultAction)

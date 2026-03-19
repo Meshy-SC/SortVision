@@ -288,10 +288,9 @@ struct SettingsView: View {
 
 private struct AudioSettingsView: View {
 
-    @Environment(GameManager.self) private var gameManager
-
-    @State private var isSoundOn: Bool = true
-    @State private var hasCompletedInitialSync = false
+    /// Reads/writes the sound preference directly via UserDefaults,
+    /// using the same key as `GameManager` and `SoundManager`.
+    @AppStorage(GameManager.soundEnabledKey) private var isSoundOn: Bool = true
 
     var body: some View {
         List {
@@ -299,20 +298,12 @@ private struct AudioSettingsView: View {
                 Toggle(isOn: $isSoundOn) {
                     Label("All Sound Effects", systemImage: isSoundOn ? "speaker.wave.2.fill" : "speaker.slash.fill")
                 }
-                .onChange(of: isSoundOn) {
-                    guard hasCompletedInitialSync else { return }
-                    gameManager.soundEnabled = isSoundOn
-                }
             }
         }
         .navigationTitle("Audio")
         #if os(iOS)
         .navigationBarTitleDisplayMode(.inline)
         #endif
-        .onAppear {
-            isSoundOn = gameManager.soundEnabled
-            hasCompletedInitialSync = true
-        }
     }
 }
 

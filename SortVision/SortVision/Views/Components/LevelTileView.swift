@@ -61,14 +61,10 @@ struct LevelTileView: View {
             .fixedSize(horizontal: false, vertical: true)
             #else
             .frame(maxWidth: .infinity, minHeight: 64)
-            .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .glassEffect(in: RoundedRectangle(cornerRadius: 12, style: .continuous))
             #endif
         }
-        #if os(macOS)
         .buttonStyle(.plain)
-        #else
-        .buttonStyle(.plain)
-        #endif
         #if os(iOS)
         .hoverEffect(.highlight)
         #endif
@@ -104,7 +100,7 @@ struct LevelTileView: View {
             .fixedSize(horizontal: false, vertical: true)
             #else
             .frame(maxWidth: .infinity, minHeight: 64)
-            .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .glassEffect(in: RoundedRectangle(cornerRadius: 12, style: .continuous))
             #endif
         }
         .buttonStyle(.plain)

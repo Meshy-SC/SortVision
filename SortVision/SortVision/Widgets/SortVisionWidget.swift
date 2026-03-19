@@ -87,29 +87,24 @@ struct SortVisionWidgetView: View {
 
             Spacer()
 
-            // Progress ring
-            ZStack {
-                Circle()
-                    .stroke(progress.currentStage.themeColor.opacity(0.2), lineWidth: 4)
-                Circle()
-                    .trim(from: 0, to: progress.stageProgress)
-                    .stroke(
-                        progress.currentStage.themeColor,
-                        style: StrokeStyle(lineWidth: 4, lineCap: .round)
-                    )
-                    .rotationEffect(.degrees(-90))
-
+            // Progress gauge — uses the same Gauge style as the main app
+            let localLevel = Stage.localLevelNumber(for: progress.nextLevel)
+            Gauge(value: progress.stageProgress, in: 0...1) {
+                // Label intentionally empty — title shown below.
+            } currentValueLabel: {
                 VStack(spacing: 0) {
-                    let localLevel = Stage.localLevelNumber(for: progress.nextLevel)
                     Text("\(localLevel)")
-                        .font(.system(.title2, design: .rounded, weight: .bold))
+                        .font(.system(size: 18, weight: .bold, design: .rounded))
                         .foregroundStyle(.primary)
                         .contentTransition(.numericText())
                     Text(progress.currentStage.displayName)
-                        .font(.system(.caption2, design: .rounded))
+                        .font(.system(size: 8, weight: .regular, design: .rounded))
                         .foregroundStyle(.secondary)
                 }
+                .minimumScaleFactor(0.5)
             }
+            .gaugeStyle(.accessoryCircularCapacity)
+            .tint(progress.currentStage.themeColor)
             .frame(width: 60, height: 60)
 
             Spacer()

@@ -92,7 +92,11 @@ struct GameToolbar: View {
         .foregroundStyle(.primary)
         .padding(.vertical, 8)
         .padding(.horizontal, 16)
+        #if os(visionOS)
         .background(.regularMaterial, in: Capsule())
+        #else
+        .glassEffect(in: Capsule())
+        #endif
         .dynamicTypeSize(...DynamicTypeSize.accessibility2)
         #if os(iOS)
         .sensoryFeedback(.impact(weight: .medium), trigger: hapticTrigger)
