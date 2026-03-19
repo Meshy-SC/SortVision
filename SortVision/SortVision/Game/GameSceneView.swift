@@ -272,7 +272,7 @@ struct GameSceneView: View {
 
     // MARK: - Layout Calculation
 
-    private struct LayoutInfo {
+    private struct LayoutInfo: Sendable {
         let isTwoRows: Bool
         let tubeSpacing: CGFloat
         let rowSpacing: CGFloat

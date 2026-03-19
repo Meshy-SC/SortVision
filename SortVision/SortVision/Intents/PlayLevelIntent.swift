@@ -120,7 +120,7 @@ struct PlayLevelIntent: AppIntent {
 }
 
 /// Errors for the Play Level intent, shown to the user in Shortcuts / Siri.
-enum PlayLevelError: LocalizedError, CustomLocalizedStringResourceConvertible {
+enum PlayLevelError: LocalizedError, CustomLocalizedStringResourceConvertible, Sendable {
     case levelNotFound(Int, String)
     case levelLocked(Int, String)
 
@@ -167,7 +167,7 @@ struct ContinuePlayingIntent: AppIntent {
 }
 
 /// Errors for the Continue Playing intent.
-enum ContinuePlayingError: LocalizedError, CustomLocalizedStringResourceConvertible {
+enum ContinuePlayingError: LocalizedError, CustomLocalizedStringResourceConvertible, Sendable {
     case allCompleted
 
     var localizedStringResource: LocalizedStringResource {

@@ -48,12 +48,12 @@ final class GameEngine {
     /// Updated by the scene view. Ignored by observation to prevent extra renders.
     @ObservationIgnored var viewScale: CGFloat = 1.0
 
-    enum GameState {
+    enum GameState: Sendable {
         case idle, playing, over
     }
 
     /// Describes an active pour for the view layer to render the liquid stream.
-    struct PourAnimation: Equatable {
+    struct PourAnimation: Equatable, Sendable {
         let sourceIndex: Int
         let targetIndex: Int
         let colorGroupId: Int

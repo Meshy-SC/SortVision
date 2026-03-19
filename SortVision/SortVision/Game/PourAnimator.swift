@@ -17,7 +17,7 @@ import Foundation
 /// The animator operates on `TubeState` objects directly (they are reference
 /// types) and reports phase transitions via the `PourAnimatorDelegate` protocol.
 @MainActor
-struct PourAnimator {
+enum PourAnimator {
 
     // MARK: - Configuration
 

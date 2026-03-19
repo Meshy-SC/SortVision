@@ -116,7 +116,7 @@ struct ConfettiOverlay: View {
 // MARK: - Confetti Particle Model
 
 /// Internal data model for a single confetti particle.
-private struct ConfettiParticle: Identifiable {
+private struct ConfettiParticle: Identifiable, Sendable {
     let id = UUID()
     let birthTime: Double
     let lifetime: Double
@@ -136,6 +136,6 @@ private struct ConfettiParticle: Identifiable {
 // MARK: - Confetti Shape
 
 /// The three confetti particle shapes rendered by ``ConfettiOverlay``.
-private enum ConfettiShape: CaseIterable {
+private enum ConfettiShape: CaseIterable, Sendable {
     case rectangle, circle, triangle
 }

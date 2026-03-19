@@ -44,7 +44,7 @@ struct SortVisionTimelineProvider: TimelineProvider {
 // MARK: - Widget Entry
 
 /// A single timeline entry containing the player's current progress.
-struct SortVisionWidgetEntry: TimelineEntry {
+struct SortVisionWidgetEntry: TimelineEntry, Sendable {
     let date: Date
     let progress: WidgetDataProvider.GameProgress
 }

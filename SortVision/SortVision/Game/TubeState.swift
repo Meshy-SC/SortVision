@@ -6,12 +6,18 @@ import Observation
 ///
 /// Used by `TubeState` to track the liquid contents. Segments with the
 /// same `groupId` that are adjacent get merged during pour operations.
-struct Liquid: Identifiable, Equatable {
-    let id = UUID()
+struct Liquid: Identifiable, Equatable, Hashable, Sendable {
+    let id: UUID
     /// Index into `ColorPalette.colors` (0–11).
     let groupId: Int
     /// Number of liquid units this segment occupies.
     var value: CGFloat
+
+    init(groupId: Int, value: CGFloat) {
+        self.id = UUID()
+        self.groupId = groupId
+        self.value = value
+    }
 }
 
 /// Represents the state of a single tube in the puzzle.
@@ -27,12 +33,12 @@ struct Liquid: Identifiable, Equatable {
 /// Animation properties (`animationOffsetX/Y`, `tiltAngle`) are driven
 /// by `GameEngine` during pour sequences and should not be modified
 /// directly by views.
-@Observable
+@MainActor @Observable
 final class TubeState: Identifiable {
     let id = UUID()
 
     /// Maximum liquid units per tube.
-    static let maxValue: Int = 4
+    nonisolated static let maxValue: Int = 4
 
     /// Index in the game's holder array.
     let index: Int
