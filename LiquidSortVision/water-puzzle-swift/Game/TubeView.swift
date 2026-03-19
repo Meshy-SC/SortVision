@@ -12,6 +12,12 @@ import SwiftUI
 /// externally by GameSceneView to allow base-frame capture for pour alignment.
 struct TubeView: View {
 
+    enum RenderLayer {
+        case full
+        case content
+        case front
+    }
+
     // MARK: - Constants
 
     /// Total width of the bottle body.
@@ -90,6 +96,24 @@ struct TubeView: View {
         )
     }
 
+    /// Offset from the tube center to a point just inside the upright tube neck.
+    static func streamEntryOffset(scale: CGFloat) -> CGPoint {
+        let mouthCenter = mouthCenterOffset(scale: scale)
+        return CGPoint(
+            x: 0,
+            y: mouthCenter.y + wallThickness * 2.0 * scale
+        )
+    }
+
+    /// Offset from the tube center to a point just inside the tilted source neck.
+    static func sourceStreamInnerOffset(scale: CGFloat) -> CGPoint {
+        let mouthCenter = mouthCenterOffset(scale: scale)
+        return CGPoint(
+            x: mouthCenter.x,
+            y: mouthCenter.y + (neckHeight + wallThickness * 1.2) * scale
+        )
+    }
+
     /// Rotates a local point around the tube center into scene-space coordinates.
     static func rotate(offset: CGPoint, by angle: CGFloat) -> CGPoint {
         let sinAngle = sin(angle)
@@ -137,26 +161,34 @@ struct TubeView: View {
 
     let tube: TubeState
     let onTap: () -> Void
+    let layer: RenderLayer
 
     var body: some View {
         ZStack(alignment: .bottom) {
-            // Glass bottle (behind liquid)
-            glassBack
+            if layer != .front {
+                // Glass bottle (behind liquid)
+                glassBack
 
-            // Liquid stack (inside the body area only)
-            liquidStack
-                .padding(.horizontal, Self.liquidInset)
-                .padding(.bottom, Self.liquidInset)
+                // Liquid stack (inside the body area only)
+                liquidStack
+                    .padding(.horizontal, Self.liquidInset)
+                    .padding(.bottom, Self.liquidInset)
+            }
 
-            // Glass front (shine overlay, on top of liquid)
-            glassFront
+            if layer != .content {
+                // Glass front (shine overlay, on top of liquid)
+                glassFront
+            }
         }
         .frame(width: Self.tubeWidth, height: Self.tubeHeight)
         .contentShape(Rectangle())
         .onTapGesture {
-            onTap()
+            if layer != .front {
+                onTap()
+            }
         }
         .accessibilityElement(children: .ignore)
+        .accessibilityHidden(layer == .front)
         .accessibilityLabel(accessibilityLabel)
         .accessibilityAddTraits(.isButton)
     }
