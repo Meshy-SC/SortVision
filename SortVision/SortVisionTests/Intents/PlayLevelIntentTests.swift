@@ -17,8 +17,8 @@ struct PlayLevelIntentTests {
             (.platinum, .platinum),
             (.diamond, .diamond),
             (.emerald, .emerald),
-            (.ruby, .ruby),
-            (.obsidian, .obsidian),
+            (.master, .master),
+            (.grandmaster, .grandmaster),
             (.legend, .legend),
           ])
     func appEnumToStage(appEnum: StageAppEnum, expected: Stage) {
@@ -92,8 +92,8 @@ struct PlayLevelIntentTests {
         #expect(representations[.platinum] != nil)
         #expect(representations[.diamond] != nil)
         #expect(representations[.emerald] != nil)
-        #expect(representations[.ruby] != nil)
-        #expect(representations[.obsidian] != nil)
+        #expect(representations[.master] != nil)
+        #expect(representations[.grandmaster] != nil)
         #expect(representations[.legend] != nil)
     }
 }

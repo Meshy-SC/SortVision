@@ -103,7 +103,6 @@ final class GameEngine {
     // MARK: - Configuration
 
     var level: Level?
-    var reduceMotion: Bool = false
 
     // MARK: - Callbacks
 

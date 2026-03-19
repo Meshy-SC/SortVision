@@ -17,11 +17,6 @@ enum GameSound: String, CaseIterable, Sendable {
         case .water, .win: return "wav"
         }
     }
-
-    /// Complete filename including extension.
-    var fileName: String {
-        "\(rawValue).\(fileExtension)"
-    }
 }
 
 /// Sound manager using AVAudioPlayer for fire-and-forget playback.

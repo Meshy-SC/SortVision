@@ -78,12 +78,10 @@ struct LevelGridView: View {
                 let displayNumber = Stage.localLevelNumber(for: level.number)
                 let star = gameManager.starRating(for: level.number)
                 let isLocked = gameManager.isLevelLocked(level.number)
-                let isCompleted = level.number <= gameManager.completedLevel
 
                 LevelTileView(
                     levelNumber: displayNumber,
                     isLocked: isLocked,
-                    isCompleted: isCompleted,
                     starRating: star,
                     themeColor: stage.themeColor,
                     lockMessage: "Complete more levels to unlock this level."

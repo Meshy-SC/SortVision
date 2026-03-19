@@ -1,31 +1,13 @@
 import Foundation
 import Observation
+import WidgetKit
 
 // MARK: - WorldData Model
 
-/// Decoded from World{N}Data.json — mirrors Pushbox's WorldData format.
+/// Decoded from World{N}Data.json — extracts optimal move counts per level.
 private struct WorldData: Decodable {
-    let worldName: String
-    let title: String
-    let subtitle: String
     let optimalPushCounts: [Int]
-    let solutions: [[Any]]?
-
-    private enum CodingKeys: String, CodingKey {
-        case worldName, title, subtitle, optimalPushCounts, solutions
-    }
-
-    init(from decoder: Decoder) throws {
-        let container = try decoder.container(keyedBy: CodingKeys.self)
-        worldName = try container.decode(String.self, forKey: .worldName)
-        title = try container.decode(String.self, forKey: .title)
-        subtitle = try container.decode(String.self, forKey: .subtitle)
-        optimalPushCounts = try container.decode([Int].self, forKey: .optimalPushCounts)
-        // Solutions can be complex nested arrays; skip decoding for now
-        solutions = nil
-    }
 }
-import WidgetKit
 
 /// Central game state manager responsible for level data and progress tracking.
 ///
@@ -278,9 +260,7 @@ final class GameManager {
     /// A level is locked if its global number exceeds the next playable level
     /// (i.e., `globalNumber > completedLevel + 1`).
     func isLevelLocked(_ globalNumber: Int) -> Bool {
-        // DEBUG: All levels unlocked for testing
-        false
-        // globalNumber > completedLevel + 1
+        globalNumber > completedLevel + 1
     }
 
     /// Checks whether a stage is accessible to the player.
@@ -288,10 +268,8 @@ final class GameManager {
     /// A stage is accessible if it has content and the player has reached
     /// at least its first level (i.e., completed the previous stage or it's Iron).
     func isStageAccessible(_ stage: Stage) -> Bool {
-        // DEBUG: All worlds accessible for testing
-        true
-        // guard stage.isAvailable else { return false }
-        // return completedLevel >= stage.levelRange.lowerBound - 1
+        guard stage.isAvailable else { return false }
+        return completedLevel >= stage.levelRange.lowerBound - 1
     }
 
     /// Checks whether a next level exists after the given global level number.
@@ -363,11 +341,6 @@ final class GameManager {
         }
 
         saveBestMoves()
-    }
-
-    /// Legacy completion without move tracking (backward compatibility).
-    func completeLevel(number: Int) {
-        completeLevel(number: number, moves: 0)
     }
 
     // MARK: - Aggregate Stats

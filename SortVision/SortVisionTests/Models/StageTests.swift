@@ -11,7 +11,7 @@ struct StageTests {
     @Test("Each stage has a human-readable display name",
           arguments: zip(
             Stage.allCases,
-            ["Iron", "Bronze", "Silver", "Gold", "Platinum", "Diamond", "Emerald", "Ruby", "Obsidian", "Legend"]
+            ["Iron", "Bronze", "Silver", "Gold", "Platinum", "Emerald", "Diamond", "Master", "Grandmaster", "Legend"]
           ))
     func displayNames(stage: Stage, expectedName: String) {
         #expect(stage.displayName == expectedName)
@@ -44,24 +44,16 @@ struct StageTests {
 
     // MARK: - Resource Mapping
 
-    @Test("First four stages have level resources, rest do not")
-    func levelResources() {
-        #expect(Stage.iron.levelResourceName != nil)
-        #expect(Stage.bronze.levelResourceName != nil)
-        #expect(Stage.silver.levelResourceName != nil)
-        #expect(Stage.gold.levelResourceName != nil)
-        #expect(Stage.platinum.levelResourceName == nil)
-        #expect(Stage.diamond.levelResourceName == nil)
-        #expect(Stage.emerald.levelResourceName == nil)
-        #expect(Stage.ruby.levelResourceName == nil)
-        #expect(Stage.obsidian.levelResourceName == nil)
-        #expect(Stage.legend.levelResourceName == nil)
+    @Test("All stages have level resource names",
+          arguments: Stage.allCases)
+    func levelResources(stage: Stage) {
+        #expect(!stage.levelResourceName.isEmpty)
     }
 
-    @Test("isAvailable matches levelResourceName presence",
+    @Test("All stages are available",
           arguments: Stage.allCases)
     func isAvailable(stage: Stage) {
-        #expect(stage.isAvailable == (stage.levelResourceName != nil))
+        #expect(stage.isAvailable)
     }
 
     // MARK: - Stage Lookup
@@ -155,12 +147,4 @@ struct StageTests {
         #expect(Stage(rawValue: 100) == nil)
     }
 
-    // MARK: - Completion Keys
-
-    @Test("Completion keys are unique across all stages")
-    func completionKeysAreUnique() {
-        let keys = Stage.allCases.map(\.completionKey)
-        let uniqueKeys = Set(keys)
-        #expect(keys.count == uniqueKeys.count, "Completion keys must be unique across stages")
-    }
 }

@@ -123,7 +123,6 @@ struct GameplayView: View {
     private func createEngine() {
         let gameEngine = GameEngine()
         gameEngine.level = level
-        gameEngine.reduceMotion = reduceMotion
 
         gameEngine.onLevelComplete = {
             completionMoves = gameEngine.moveCount

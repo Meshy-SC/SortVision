@@ -13,10 +13,8 @@ struct LevelTileView: View {
 
     let levelNumber: Int
     let isLocked: Bool
-    let isCompleted: Bool
     let starRating: Int
     let themeColor: Color
-    var isCurrent: Bool = false
     var lockMessage: String?
     let action: () -> Void
 
@@ -41,7 +39,7 @@ struct LevelTileView: View {
             VStack(spacing: 4) {
                 Text("\(levelNumber)")
                     .font(.headline.monospacedDigit())
-                    .foregroundStyle(isCurrent ? Color.accentColor : .primary)
+                    .foregroundStyle(.primary)
 
                 HStack(spacing: 1) {
                     ForEach(0..<3, id: \.self) { i in
@@ -65,13 +63,6 @@ struct LevelTileView: View {
             .frame(maxWidth: .infinity, minHeight: 64)
             .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
             #endif
-            .overlay(
-                RoundedRectangle(cornerRadius: 12, style: .continuous)
-                    .strokeBorder(
-                        isCurrent ? Color.accentColor : .clear,
-                        lineWidth: isCurrent ? 2 : 0
-                    )
-            )
         }
         #if os(macOS)
         .buttonStyle(.plain)
@@ -134,12 +125,9 @@ struct LevelTileView: View {
     // MARK: - Helpers
 
     private var unlockedAccessibilityDescription: String {
-        var description: String
         if starRating > 0 {
-            description = "Level \(levelNumber), \(starRating) of 3 stars\(isCurrent ? ", current level" : "")"
-        } else {
-            description = "Level \(levelNumber)\(isCurrent ? ", current level" : "")"
+            return "Level \(levelNumber), \(starRating) of 3 stars"
         }
-        return description
+        return "Level \(levelNumber)"
     }
 }

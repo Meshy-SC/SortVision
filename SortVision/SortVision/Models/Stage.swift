@@ -139,13 +139,6 @@ enum Stage: Int, CaseIterable, Codable, Sendable, Identifiable, Hashable {
     /// All 10 worlds now have content.
     var isAvailable: Bool { true }
 
-    // MARK: - UserDefaults
-
-    /// UserDefaults key for legacy per-stage tracking (used in migration).
-    var completionKey: String {
-        "stage_\(rawValue)_completed"
-    }
-
     // MARK: - Helpers
 
     /// Returns the stage that contains the given global level number.
