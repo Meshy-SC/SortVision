@@ -13,7 +13,6 @@ import SwiftUI
 struct TubeView: View {
 
     enum RenderLayer {
-        case full
         case content
         case front
     }
@@ -34,9 +33,6 @@ struct TubeView: View {
 
     /// Height of the cap/stopper.
     static let capHeight: CGFloat = 12
-
-    /// Interior half-width of the neck opening where liquid visibly exits.
-    static let openingHalfWidth: CGFloat = neckWidth / 2 - wallThickness
 
     /// Half-width of the visible top rim/cap silhouette.
     static let rimHalfWidth: CGFloat = (neckWidth + 10) / 2
@@ -87,15 +83,6 @@ struct TubeView: View {
         )
     }
 
-    /// Offset from the tube center to the inner opening where the liquid exits.
-    static func streamOutletOffset(toward tiltSign: CGFloat, scale: CGFloat) -> CGPoint {
-        let mouthCenter = mouthCenterOffset(scale: scale)
-        return CGPoint(
-            x: tiltSign * openingHalfWidth * scale,
-            y: mouthCenter.y + wallThickness * 0.5 * scale
-        )
-    }
-
     /// Offset from the tube center to a point just inside the upright tube neck.
     static func streamEntryOffset(scale: CGFloat) -> CGPoint {
         let mouthCenter = mouthCenterOffset(scale: scale)
@@ -136,15 +123,6 @@ struct TubeView: View {
         return CGPoint(
             x: frame.midX + translationX + rotatedOffset.x,
             y: frame.midY + translationY + rotatedOffset.y
-        )
-    }
-
-    /// Scene-space point for the target tube's neck opening center.
-    static func mouthPoint(in frame: CGRect, scale: CGFloat) -> CGPoint {
-        let offset = mouthCenterOffset(scale: scale)
-        return CGPoint(
-            x: frame.midX + offset.x,
-            y: frame.midY + offset.y
         )
     }
 

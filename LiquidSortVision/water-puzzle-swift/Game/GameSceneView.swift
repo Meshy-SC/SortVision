@@ -161,7 +161,7 @@ struct GameSceneView: View {
 
     private func tubeZIndex(for tube: TubeState, layer: TubeView.RenderLayer) -> Double {
         switch layer {
-        case .content, .full:
+        case .content:
             return tube.isAnimating ? 10 : 0
         case .front:
             return tube.isAnimating ? 30 : 20

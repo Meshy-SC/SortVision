@@ -6,21 +6,6 @@ import Testing
 @Suite("Tube Geometry")
 struct TubeViewGeometryTests {
 
-    @Test("Mouth point matches the tube neck opening")
-    func mouthPointMatchesNeckOpening() {
-        let frame = CGRect(
-            x: 24,
-            y: 40,
-            width: TubeView.tubeWidth,
-            height: TubeView.tubeHeight
-        )
-
-        let mouthPoint = TubeView.mouthPoint(in: frame, scale: 1.0)
-
-        #expect(mouthPoint.x == frame.midX)
-        #expect(mouthPoint.y == frame.minY + TubeView.capHeight)
-    }
-
     @Test("Lip point matches the visible top rim center")
     func lipPointMatchesVisibleRim() {
         let frame = CGRect(
