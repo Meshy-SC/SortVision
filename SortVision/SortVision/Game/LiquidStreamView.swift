@@ -14,11 +14,9 @@ struct LiquidStreamView: View {
     /// Pour progress 0…1 (controls stream thickness/opacity).
     let progress: CGFloat
 
-    /// Width of the liquid stream.
-    private let streamWidth: CGFloat = 5
-
     var body: some View {
         Canvas { context, size in
+            let streamThickness = StreamGeometry.thickness(for: progress)
             guard streamThickness > 0.01 else { return }
 
             let path = streamPath()
@@ -29,7 +27,7 @@ struct LiquidStreamView: View {
                 path,
                 with: .color(color.opacity(0.12)),
                 style: StrokeStyle(
-                    lineWidth: (streamWidth + 1) * streamThickness,
+                    lineWidth: (StreamGeometry.streamWidth + 1) * streamThickness,
                     lineCap: .round,
                     lineJoin: .round
                 )
@@ -40,7 +38,7 @@ struct LiquidStreamView: View {
                 path,
                 with: .color(color),
                 style: StrokeStyle(
-                    lineWidth: streamWidth * streamThickness,
+                    lineWidth: StreamGeometry.streamWidth * streamThickness,
                     lineCap: .round,
                     lineJoin: .round
                 )
@@ -51,23 +49,13 @@ struct LiquidStreamView: View {
                 path,
                 with: .color(.white.opacity(0.2)),
                 style: StrokeStyle(
-                    lineWidth: (streamWidth * 0.4) * streamThickness,
+                    lineWidth: (StreamGeometry.streamWidth * 0.4) * streamThickness,
                     lineCap: .round,
                     lineJoin: .round
                 )
             )
         }
         .allowsHitTesting(false)
-    }
-
-    /// Stream thickness ramps up quickly and stays thick, then tapers.
-    private var streamThickness: CGFloat {
-        if progress < 0.08 {
-            return progress / 0.08
-        } else if progress > 0.88 {
-            return (1.0 - progress) / 0.12
-        }
-        return 1.0
     }
 
     /// Creates a restrained pour path that leaves and enters the necks cleanly.
@@ -100,10 +88,9 @@ struct LiquidNeckSegmentView: View {
     let color: Color
     let progress: CGFloat
 
-    private let streamWidth: CGFloat = 5
-
     var body: some View {
         Canvas { context, size in
+            let thickness = StreamGeometry.thickness(for: progress)
             guard thickness > 0.01 else { return }
 
             var path = Path()
@@ -114,7 +101,7 @@ struct LiquidNeckSegmentView: View {
                 path,
                 with: .color(color.opacity(0.12)),
                 style: StrokeStyle(
-                    lineWidth: (streamWidth + 1) * thickness,
+                    lineWidth: (StreamGeometry.streamWidth + 1) * thickness,
                     lineCap: .round,
                     lineJoin: .round
                 )
@@ -124,7 +111,7 @@ struct LiquidNeckSegmentView: View {
                 path,
                 with: .color(color),
                 style: StrokeStyle(
-                    lineWidth: streamWidth * thickness,
+                    lineWidth: StreamGeometry.streamWidth * thickness,
                     lineCap: .round,
                     lineJoin: .round
                 )
@@ -134,21 +121,12 @@ struct LiquidNeckSegmentView: View {
                 path,
                 with: .color(.white.opacity(0.2)),
                 style: StrokeStyle(
-                    lineWidth: (streamWidth * 0.4) * thickness,
+                    lineWidth: (StreamGeometry.streamWidth * 0.4) * thickness,
                     lineCap: .round,
                     lineJoin: .round
                 )
             )
         }
         .allowsHitTesting(false)
-    }
-
-    private var thickness: CGFloat {
-        if progress < 0.08 {
-            return progress / 0.08
-        } else if progress > 0.88 {
-            return (1.0 - progress) / 0.12
-        }
-        return 1.0
     }
 }

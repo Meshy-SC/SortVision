@@ -6,7 +6,7 @@ import SwiftUI
 /// move count with par comparison, animated score counter,
 /// and continuation actions.
 /// Timed celebration sequence: background → title → confetti → stars → moves → score → button.
-struct LevelCompletionOverlay: View {
+struct LevelCompletionOverlay: View, PlatformAdaptiveSizing {
     let stage: Stage
     let level: Level
     let moveCount: Int
@@ -303,74 +303,13 @@ struct LevelCompletionOverlay: View {
         }
     }
 
-    // MARK: - Platform-Adaptive Sizing
-
-    private var titleFontSize: CGFloat {
-        #if os(visionOS)
-        42
-        #else
-        32
-        #endif
-    }
-
-    private var starSize: CGFloat {
-        #if os(visionOS)
-        60
-        #else
-        48
-        #endif
-    }
-
-    private var starSpacing: CGFloat {
-        #if os(visionOS)
-        24
-        #else
-        16
-        #endif
-    }
-
-    private var scoreBonusFontSize: CGFloat {
-        #if os(visionOS)
-        36
-        #else
-        28
-        #endif
-    }
-
-    private var totalScoreFontSize: CGFloat {
-        #if os(visionOS)
-        28
-        #else
-        22
-        #endif
-    }
-
-    private var movesFontSize: CGFloat {
-        #if os(visionOS)
-        22
-        #else
-        17
-        #endif
-    }
-
     // MARK: - Navigation
 
-    private func navigateToNextLevel() {
-        let nextGlobalNumber = level.number + 1
-        guard let nextLevel = gameManager.level(globalNumber: nextGlobalNumber),
-              let nextStage = Stage.stage(for: nextGlobalNumber)
-        else { return }
+    private var navigator: LevelNavigator {
+        LevelNavigator(path: $path, gameManager: gameManager)
+    }
 
-        if nextStage == stage {
-            path.removeLast()
-            path.append(AppScreen.gameplay(stage, nextLevel))
-        } else {
-            path.removeLast(path.count)
-            Task {
-                try? await Task.sleep(for: .milliseconds(100))
-                path.append(AppScreen.levelGrid(nextStage))
-                path.append(AppScreen.gameplay(nextStage, nextLevel))
-            }
-        }
+    private func navigateToNextLevel() {
+        navigator.goToNextLevel(after: level, in: stage)
     }
 }

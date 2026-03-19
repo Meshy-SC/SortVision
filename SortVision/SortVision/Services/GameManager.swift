@@ -5,7 +5,7 @@ import WidgetKit
 // MARK: - WorldData Model
 
 /// Decoded from World{N}Data.json — extracts optimal move counts per level.
-private struct WorldData: Decodable {
+struct WorldData: Decodable, Sendable {
     let optimalPushCounts: [Int]
 }
 
@@ -32,10 +32,12 @@ final class GameManager {
     // MARK: - Constants
 
     /// UserDefaults key for the sound-enabled preference.
-    static let soundEnabledKey = "soundEnabled"
+    /// Forwarded from `ProgressStore` for backward compatibility.
+    static var soundEnabledKey: String { ProgressStore.soundEnabledKey }
 
     /// UserDefaults key for the highest completed global level number.
-    static let completionKey = "globalLevelCompleted"
+    /// Forwarded from `ProgressStore` for backward compatibility.
+    static var completionKey: String { ProgressStore.completionKey }
 
     // MARK: - Level Cache
 
@@ -57,12 +59,8 @@ final class GameManager {
     private var bestMoves: [Int: Int] = [:]
 
     /// Player's earned star rating for each global level number.
-    /// Persisted to UserDefaults.
+    /// Persisted to UserDefaults via `ProgressStore`.
     private var starRatings: [Int: Int] = [:]
-
-    /// UserDefaults keys for star/best-move persistence.
-    private static let bestMovesKey = "bestMoves"
-    private static let starRatingsKey = "starRatings"
 
     // MARK: - Observable State
 
@@ -70,60 +68,22 @@ final class GameManager {
     /// Drives level locking, stage accessibility, and progress display.
     private(set) var completedLevel: Int = 0
 
-    /// Sound on/off toggle, persisted to UserDefaults.
+    /// Sound on/off toggle, persisted via `ProgressStore`.
     var soundEnabled: Bool = true {
         didSet {
-            UserDefaults.standard.set(soundEnabled, forKey: Self.soundEnabledKey)
+            ProgressStore.saveSoundPreference(soundEnabled)
         }
     }
 
     // MARK: - Initialization
 
     private init() {
-        // Load sound preference (default to true on first launch)
-        if UserDefaults.standard.object(forKey: Self.soundEnabledKey) == nil {
-            UserDefaults.standard.set(true, forKey: Self.soundEnabledKey)
-        }
-        soundEnabled = UserDefaults.standard.bool(forKey: Self.soundEnabledKey)
-
-        migrateFromLegacyProgress()
+        soundEnabled = ProgressStore.loadSoundPreference()
+        ProgressStore.migrateFromLegacyProgress()
         loadAllLevels()
         loadAllWorldData()
         loadCompletedLevel()
         loadBestMoves()
-    }
-
-    // MARK: - Legacy Migration
-
-    /// Migrates from the old per-difficulty progress system (Easy/Normal/Hard/Expert)
-    /// to the new single global level progression.
-    ///
-    /// Old keys: `"easy_Level_Complete"`, `"normal_Level_Complete"`, etc.
-    /// Maps completed counts to global level numbers:
-    /// Easy 1–100 → Global 1–100, Normal 1–100 → Global 101–200, etc.
-    private func migrateFromLegacyProgress() {
-        guard !UserDefaults.standard.bool(forKey: "stage_progress_migrated") else { return }
-
-        let legacyModes: [(key: String, offset: Int)] = [
-            ("easy_Level_Complete", 0),
-            ("normal_Level_Complete", 100),
-            ("hard_Level_Complete", 200),
-            ("expert_Level_Complete", 300),
-        ]
-
-        var maxGlobal = 0
-        for (key, offset) in legacyModes {
-            let completed = UserDefaults.standard.integer(forKey: key)
-            if completed > 0 {
-                maxGlobal = max(maxGlobal, offset + completed)
-            }
-        }
-
-        if maxGlobal > 0 {
-            UserDefaults.standard.set(maxGlobal, forKey: Self.completionKey)
-        }
-
-        UserDefaults.standard.set(true, forKey: "stage_progress_migrated")
     }
 
     // MARK: - Level Loading
@@ -173,28 +133,18 @@ final class GameManager {
         }
     }
 
-    /// Restores per-level best moves and star ratings from UserDefaults.
+    /// Restores per-level best moves and star ratings from `ProgressStore`.
     private func loadBestMoves() {
-        if let dict = UserDefaults.standard.dictionary(forKey: Self.bestMovesKey) as? [String: Int] {
-            bestMoves = Dictionary(uniqueKeysWithValues: dict.compactMap { key, value in
-                guard let intKey = Int(key) else { return nil }
-                return (intKey, value)
-            })
-        }
-        if let dict = UserDefaults.standard.dictionary(forKey: Self.starRatingsKey) as? [String: Int] {
-            starRatings = Dictionary(uniqueKeysWithValues: dict.compactMap { key, value in
-                guard let intKey = Int(key) else { return nil }
-                return (intKey, value)
-            })
-        }
+        bestMoves = ProgressStore.loadBestMoves()
+        starRatings = ProgressStore.loadStarRatings()
     }
 
-    /// Saves best moves and star ratings to UserDefaults.
+    /// Saves best moves and star ratings via `ProgressStore`.
     private func saveBestMoves() {
-        let movesDict = Dictionary(uniqueKeysWithValues: bestMoves.map { (String($0.key), $0.value) })
-        let starsDict = Dictionary(uniqueKeysWithValues: starRatings.map { (String($0.key), $0.value) })
-        UserDefaults.standard.set(movesDict, forKey: Self.bestMovesKey)
-        UserDefaults.standard.set(starsDict, forKey: Self.starRatingsKey)
+        ProgressStore.saveBestMovesAndRatings(
+            bestMoves: bestMoves,
+            starRatings: starRatings
+        )
     }
 
     /// Loads and decodes levels from a single JSON resource file.
@@ -222,9 +172,9 @@ final class GameManager {
         }
     }
 
-    /// Restores completed level progress from UserDefaults.
+    /// Restores completed level progress from `ProgressStore`.
     func loadCompletedLevel() {
-        completedLevel = UserDefaults.standard.integer(forKey: Self.completionKey)
+        completedLevel = ProgressStore.loadCompletedLevel()
     }
 
     // MARK: - Level Queries
@@ -319,7 +269,7 @@ final class GameManager {
         // Update global progress
         if number > completedLevel {
             completedLevel = number
-            UserDefaults.standard.set(number, forKey: Self.completionKey)
+            ProgressStore.saveCompletedLevel(number)
             WidgetCenter.shared.reloadAllTimelines()
         }
 
@@ -362,9 +312,7 @@ final class GameManager {
         completedLevel = 0
         bestMoves.removeAll()
         starRatings.removeAll()
-        UserDefaults.standard.set(0, forKey: Self.completionKey)
-        UserDefaults.standard.removeObject(forKey: Self.bestMovesKey)
-        UserDefaults.standard.removeObject(forKey: Self.starRatingsKey)
+        ProgressStore.resetAllProgress()
         WidgetCenter.shared.reloadAllTimelines()
     }
 }

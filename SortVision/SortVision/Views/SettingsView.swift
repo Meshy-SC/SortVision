@@ -184,7 +184,7 @@ struct SettingsView: View {
             HStack {
                 Label("Version", systemImage: "info.circle.fill")
                 Spacer()
-                Text("\(appVersion) (\(buildNumber))")
+                Text(PlatformInfo.versionDisplay)
                     .foregroundStyle(.secondary)
             }
 
@@ -202,7 +202,7 @@ struct SettingsView: View {
 
     private func sendFeedback() {
         let email = "davinci.dalhi@gmail.com"
-        let subject = "SortVision Feedback | \(platformName) | v\(appVersion) | \(systemName) \(systemVersion) \(deviceModel)"
+        let subject = "SortVision Feedback | \(PlatformInfo.platformName) | v\(PlatformInfo.appVersion) | \(PlatformInfo.systemName) \(PlatformInfo.systemVersion) \(PlatformInfo.deviceModel)"
         var components = URLComponents()
         components.scheme = "mailto"
         components.path = email
@@ -223,125 +223,6 @@ struct SettingsView: View {
         }
     }
 
-    // MARK: - Platform Helpers
-
-    private var platformName: String {
-        #if os(iOS)
-        if UIDevice.current.userInterfaceIdiom == .pad {
-            return "iPad"
-        }
-        return "iOS"
-        #elseif os(macOS)
-        return "macOS"
-        #elseif os(visionOS)
-        return "visionOS"
-        #else
-        return "Unknown"
-        #endif
-    }
-
-    private var systemName: String {
-        #if os(iOS)
-        return UIDevice.current.systemName
-        #elseif os(macOS)
-        return "macOS"
-        #elseif os(visionOS)
-        return "visionOS"
-        #else
-        return "Unknown"
-        #endif
-    }
-
-    private var systemVersion: String {
-        #if os(iOS)
-        return UIDevice.current.systemVersion
-        #else
-        let v = ProcessInfo.processInfo.operatingSystemVersion
-        return "\(v.majorVersion).\(v.minorVersion).\(v.patchVersion)"
-        #endif
-    }
-
-    private var deviceModel: String {
-        #if os(iOS)
-        return UIDevice.current.model
-        #else
-        var size = 0
-        sysctlbyname("hw.model", nil, &size, nil, 0)
-        var model = [UInt8](repeating: 0, count: size)
-        sysctlbyname("hw.model", &model, &size, nil, 0)
-        return String(decoding: model.prefix(while: { $0 != 0 }), as: UTF8.self)
-        #endif
-    }
-
-    // MARK: - Helpers
-
-    private var appVersion: String {
-        Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0"
-    }
-
-    private var buildNumber: String {
-        Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "1"
-    }
 }
 
-// MARK: - Audio Settings Sub-Page
-
-private struct AudioSettingsView: View {
-
-    @Environment(GameManager.self) private var gameManager
-
-    var body: some View {
-        @Bindable var gameManager = gameManager
-        List {
-            Section("Sound Effects") {
-                Toggle(isOn: $gameManager.soundEnabled) {
-                    Label("All Sound Effects", systemImage: gameManager.soundEnabled ? "speaker.wave.2.fill" : "speaker.slash.fill")
-                }
-            }
-        }
-        .navigationTitle("Audio")
-        #if os(iOS)
-        .navigationBarTitleDisplayMode(.inline)
-        #endif
-    }
-}
-
-// MARK: - Credits Sub-Page
-
-private struct CreditsView: View {
-
-    private var appVersion: String {
-        Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "—"
-    }
-
-    var body: some View {
-        List {
-            Section {
-                HStack {
-                    Spacer()
-                    VStack(spacing: 4) {
-                        Text("SortVision!")
-                            .font(.title2.bold())
-                            .multilineTextAlignment(.center)
-                        Text("Version \(appVersion)")
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
-                    }
-                    Spacer()
-                }
-                .listRowBackground(Color.clear)
-                .padding(.vertical, 8)
-            }
-
-            Section("Designed & Developed By") {
-                Text("Ahmed DALHI")
-            }
-        }
-        .navigationTitle("Credits")
-        #if os(iOS)
-        .navigationBarTitleDisplayMode(.inline)
-        #elseif os(macOS)
-        .formStyle(.grouped)
-        #endif
-    }
-}
+// AudioSettingsView and CreditsView are in Views/Settings/

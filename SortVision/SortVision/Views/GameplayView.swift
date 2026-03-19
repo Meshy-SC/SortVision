@@ -143,47 +143,21 @@ struct GameplayView: View {
 
     // MARK: - Navigation
 
+    private var navigator: LevelNavigator {
+        LevelNavigator(path: $path, gameManager: gameManager)
+    }
+
     private var hasPreviousLevel: Bool {
         level.number > 1
     }
 
     private func navigateToPreviousLevel() {
-        let prevGlobalNumber = level.number - 1
-        guard let prevLevel = gameManager.level(globalNumber: prevGlobalNumber),
-              let prevStage = Stage.stage(for: prevGlobalNumber)
-        else { return }
-
         showLevelComplete = false
-        if prevStage == stage {
-            path.removeLast()
-            path.append(AppScreen.gameplay(stage, prevLevel))
-        } else {
-            path.removeLast(path.count)
-            Task {
-                try? await Task.sleep(for: .milliseconds(100))
-                path.append(AppScreen.levelGrid(prevStage))
-                path.append(AppScreen.gameplay(prevStage, prevLevel))
-            }
-        }
+        navigator.goToPreviousLevel(from: level, in: stage)
     }
 
     private func navigateToNextLevel() {
-        let nextGlobalNumber = level.number + 1
-        guard let nextLevel = gameManager.level(globalNumber: nextGlobalNumber),
-              let nextStage = Stage.stage(for: nextGlobalNumber)
-        else { return }
-
         showLevelComplete = false
-        if nextStage == stage {
-            path.removeLast()
-            path.append(AppScreen.gameplay(stage, nextLevel))
-        } else {
-            path.removeLast(path.count)
-            Task {
-                try? await Task.sleep(for: .milliseconds(100))
-                path.append(AppScreen.levelGrid(nextStage))
-                path.append(AppScreen.gameplay(nextStage, nextLevel))
-            }
-        }
+        navigator.goToNextLevel(after: level, in: stage)
     }
 }

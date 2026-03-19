@@ -6,6 +6,7 @@ import SwiftUI
 struct TubeFramePreferenceKey: PreferenceKey {
     static var defaultValue: [Int: CGRect] = [:]
 
+    /// Merges tube frames from child views, keeping the latest value for each index.
     static func reduce(value: inout [Int: CGRect], nextValue: () -> [Int: CGRect]) {
         value.merge(nextValue()) { $1 }
     }

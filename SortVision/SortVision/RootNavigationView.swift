@@ -44,6 +44,12 @@ struct RootNavigationView: View {
         }
     }
 
+    // MARK: - Navigation
+
+    private var navigator: LevelNavigator {
+        LevelNavigator(path: $path, gameManager: gameManager)
+    }
+
     // MARK: - Deep Link Handling
 
     /// Handles `flowvision://play?level=5` URLs from widgets.
@@ -58,7 +64,7 @@ struct RootNavigationView: View {
               !gameManager.isLevelLocked(levelNum)
         else { return }
 
-        navigateToLevel(stage: stage, level: level)
+        navigator.navigateViaDeepLink(to: level, in: stage)
     }
 
     /// Handles navigation requests from App Intents via `DeepLinkManager`.
@@ -71,17 +77,6 @@ struct RootNavigationView: View {
               !gameManager.isLevelLocked(globalNumber)
         else { return }
 
-        navigateToLevel(stage: stage, level: level)
-    }
-
-    /// Navigates the stack to a specific gameplay level.
-    private func navigateToLevel(stage: Stage, level: Level) {
-        // Clear existing stack and push the full navigation path
-        path = NavigationPath()
-        Task {
-            try? await Task.sleep(for: .milliseconds(100))
-            path.append(AppScreen.levelGrid(stage))
-            path.append(AppScreen.gameplay(stage, level))
-        }
+        navigator.navigateViaDeepLink(to: level, in: stage)
     }
 }
