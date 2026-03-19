@@ -124,15 +124,21 @@ struct GameSceneView: View {
     // MARK: - Liquid Stream Overlay
 
     private func liquidStreamOverlay(anim: GameEngine.PourAnimation, tubeScale: CGFloat) -> some View {
+        let sourceFrame = tubeFrames[anim.sourceIndex] ?? .zero
         let targetFrame = tubeFrames[anim.targetIndex] ?? .zero
+        let sourceTube = engine.tubes.first(where: { $0.index == anim.sourceIndex })
+        let tiltSign: CGFloat = targetFrame.midX >= sourceFrame.midX ? 1.0 : -1.0
+        let sourceLip = TubeView.transformedPoint(
+            in: sourceFrame,
+            localOffset: TubeView.pourLipOffset(toward: tiltSign, scale: tubeScale),
+            angle: sourceTube?.tiltAngle ?? 0,
+            translationX: sourceTube?.animationOffsetX ?? 0,
+            translationY: sourceTube?.animationOffsetY ?? 0
+        )
+        let targetMouth = TubeView.mouthPoint(in: targetFrame, scale: tubeScale)
 
-        // The pour animation aligns the source mouth with the target mouth,
-        // so just use the target tube's positions for both stream endpoints.
-        let mouthY = targetFrame.minY + TubeView.capHeight * tubeScale
-        let bodyY = targetFrame.minY + (TubeView.capHeight + TubeView.neckHeight) * tubeScale + 15
-
-        let streamFrom = CGPoint(x: targetFrame.midX, y: mouthY)
-        let streamTo = CGPoint(x: targetFrame.midX, y: bodyY)
+        let streamFrom = sourceLip
+        let streamTo = targetMouth
 
         let streamColor = ColorPalette.color(for: anim.colorGroupId)
 

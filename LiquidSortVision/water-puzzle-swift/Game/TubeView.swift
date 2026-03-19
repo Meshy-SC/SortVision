@@ -29,6 +29,12 @@ struct TubeView: View {
     /// Height of the cap/stopper.
     static let capHeight: CGFloat = 12
 
+    /// Interior half-width of the neck opening where liquid visibly exits.
+    static let openingHalfWidth: CGFloat = neckWidth / 2 - wallThickness
+
+    /// Half-width of the visible top rim/cap silhouette.
+    static let rimHalfWidth: CGFloat = (neckWidth + 10) / 2
+
     /// Full height including body + neck + cap.
     static let tubeHeight: CGFloat = bodyHeight + neckHeight + capHeight
 
@@ -46,6 +52,77 @@ struct TubeView: View {
 
     /// Inset for the liquid area inside the glass walls.
     static let liquidInset: CGFloat = wallThickness + 1.5
+
+    /// Visible gap between the pouring lip and the target tube while streaming.
+    static let pourClearance: CGFloat = 24
+
+    /// Offset from the tube center to the neck opening center in local coordinates.
+    static func mouthCenterOffset(scale: CGFloat) -> CGPoint {
+        CGPoint(
+            x: 0,
+            y: -(tubeHeight / 2 - capHeight) * scale
+        )
+    }
+
+    /// Offset from the tube center to the visible top rim center.
+    static func lipCenterOffset(scale: CGFloat) -> CGPoint {
+        CGPoint(
+            x: 0,
+            y: -(tubeHeight / 2 - capHeight / 2) * scale
+        )
+    }
+
+    /// Offset from the tube center to the visible pouring lip on the rim.
+    static func pourLipOffset(toward tiltSign: CGFloat, scale: CGFloat) -> CGPoint {
+        let lipCenter = lipCenterOffset(scale: scale)
+        return CGPoint(
+            x: tiltSign * rimHalfWidth * scale,
+            y: lipCenter.y
+        )
+    }
+
+    /// Rotates a local point around the tube center into scene-space coordinates.
+    static func rotate(offset: CGPoint, by angle: CGFloat) -> CGPoint {
+        let sinAngle = sin(angle)
+        let cosAngle = cos(angle)
+        return CGPoint(
+            x: offset.x * cosAngle - offset.y * sinAngle,
+            y: offset.x * sinAngle + offset.y * cosAngle
+        )
+    }
+
+    /// Scene-space point for a rotated tube feature after applying animation translation.
+    static func transformedPoint(
+        in frame: CGRect,
+        localOffset: CGPoint,
+        angle: CGFloat,
+        translationX: CGFloat = 0,
+        translationY: CGFloat = 0
+    ) -> CGPoint {
+        let rotatedOffset = rotate(offset: localOffset, by: angle)
+        return CGPoint(
+            x: frame.midX + translationX + rotatedOffset.x,
+            y: frame.midY + translationY + rotatedOffset.y
+        )
+    }
+
+    /// Scene-space point for the target tube's neck opening center.
+    static func mouthPoint(in frame: CGRect, scale: CGFloat) -> CGPoint {
+        let offset = mouthCenterOffset(scale: scale)
+        return CGPoint(
+            x: frame.midX + offset.x,
+            y: frame.midY + offset.y
+        )
+    }
+
+    /// Scene-space point for the visible top rim center.
+    static func lipPoint(in frame: CGRect, scale: CGFloat) -> CGPoint {
+        let offset = lipCenterOffset(scale: scale)
+        return CGPoint(
+            x: frame.midX + offset.x,
+            y: frame.midY + offset.y
+        )
+    }
 
     // MARK: - Properties
 

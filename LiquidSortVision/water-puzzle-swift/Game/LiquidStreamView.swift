@@ -16,7 +16,7 @@ struct LiquidStreamView: View {
     let progress: CGFloat
 
     /// Width of the liquid stream.
-    private let streamWidth: CGFloat = 6
+    private let streamWidth: CGFloat = 5
 
     var body: some View {
         Canvas { context, size in
@@ -29,7 +29,7 @@ struct LiquidStreamView: View {
                 path,
                 with: .color(color.opacity(0.25)),
                 style: StrokeStyle(
-                    lineWidth: (streamWidth + 6) * streamThickness,
+                    lineWidth: (streamWidth + 2) * streamThickness,
                     lineCap: .round,
                     lineJoin: .round
                 )
@@ -56,32 +56,6 @@ struct LiquidStreamView: View {
                     lineJoin: .round
                 )
             )
-
-            // Draw drip blob at the end point
-            let dripSize = 10.0 * streamThickness
-            let dripRect = CGRect(
-                x: to.x - dripSize / 2,
-                y: to.y - dripSize / 2,
-                width: dripSize,
-                height: dripSize
-            )
-            context.fill(Ellipse().path(in: dripRect), with: .color(color))
-
-            // Splash droplets at target
-            for i in 0..<4 {
-                let angle = Double(i) * .pi / 2.0 + .pi / 4.0
-                let radius = 8.0 * streamThickness
-                let dropSize = 3.5 * streamThickness
-                let dropX = to.x + radius * cos(angle)
-                let dropY = to.y - radius * abs(sin(angle)) - 2
-                let dropRect = CGRect(
-                    x: dropX - dropSize / 2,
-                    y: dropY - dropSize / 2,
-                    width: dropSize,
-                    height: dropSize
-                )
-                context.fill(Ellipse().path(in: dropRect), with: .color(color.opacity(0.3)))
-            }
         }
         .allowsHitTesting(false)
     }
@@ -101,15 +75,20 @@ struct LiquidStreamView: View {
         var path = Path()
         path.move(to: from)
 
-        // Control points create a natural gravity-affected arc.
-        // The stream drops straight down from the lip then curves to target.
+        let dx = to.x - from.x
+        let dy = to.y - from.y
+        let downwardLead = max(dy * 0.22, 8)
+        let settleLift = min(max(abs(dy) * 0.12, 4), 10)
+
+        // Keep the stream close to the direct pour path so it reads as a controlled flow,
+        // not a spray or scattering arc.
         let cp1 = CGPoint(
-            x: from.x,
-            y: from.y + (to.y - from.y) * 0.5
+            x: from.x + dx * 0.15,
+            y: from.y + downwardLead
         )
         let cp2 = CGPoint(
-            x: to.x,
-            y: from.y + (to.y - from.y) * 0.8
+            x: from.x + dx * 0.8,
+            y: to.y - settleLift
         )
 
         path.addCurve(to: to, control1: cp1, control2: cp2)

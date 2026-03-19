@@ -241,20 +241,20 @@ final class GameEngine {
         let tiltSign: CGFloat = isTargetRight ? 1.0 : -1.0
         let signedTilt = tiltSign * pourTiltAngle
 
-        // Distance from tube center to neck opening (pour point), scaled.
-        // With .center anchor, rotation pivots around the tube's geometric center.
-        let mouthDist = (TubeView.tubeHeight / 2 - TubeView.capHeight) * viewScale
+        let targetLip = TubeView.lipPoint(in: targetFrame, scale: viewScale)
+        let sourcePourLip = TubeView.rotate(
+            offset: TubeView.pourLipOffset(toward: tiltSign, scale: viewScale),
+            by: signedTilt
+        )
+        let pourTarget = CGPoint(
+            x: targetLip.x,
+            y: targetLip.y - TubeView.pourClearance * viewScale
+        )
 
-        // Target mouth (neck opening of the target tube)
-        let targetMouthX = targetFrame.midX
-        let targetMouthY = targetFrame.midY - mouthDist
-
-        // Final offsets for perfect mouth alignment at the end of tilt.
-        // After rotating around center and applying offset:
-        //   mouthX = sourceFrame.midX + offsetX + mouthDist * sin(tilt)
-        //   mouthY = sourceFrame.midY + offsetY - mouthDist * cos(tilt)
-        let finalOffsetX = targetMouthX - sourceFrame.midX - mouthDist * sin(signedTilt)
-        let finalOffsetY = targetMouthY - sourceFrame.midY + mouthDist * cos(signedTilt)
+        // Final offsets keep the pouring lip above the target mouth with a small gap,
+        // matching the reference behavior instead of intersecting the target tube.
+        let finalOffsetX = pourTarget.x - sourceFrame.midX - sourcePourLip.x
+        let finalOffsetY = pourTarget.y - sourceFrame.midY - sourcePourLip.y
 
         // Prevent isPending spring by marking as animating immediately
         source.animationOffsetY = -0.01
@@ -275,9 +275,9 @@ final class GameEngine {
                 source.animationOffsetY = liftHeight * eased
             }
 
-            // === Phase 2: Tilt and align mouth with target ===
+            // === Phase 2: Tilt and align above target ===
             // From the lifted position, tilt to pour angle while moving
-            // horizontally so the mouth ends up at the target's neck opening.
+            // horizontally so the pouring lip ends up just above the target opening.
             await animateValue(duration: 0.28, frameDuration: frameDuration) { t in
                 let eased = Self.easeInOut(t)
                 source.tiltAngle = signedTilt * eased
