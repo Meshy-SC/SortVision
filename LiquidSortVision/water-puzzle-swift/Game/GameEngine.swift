@@ -124,6 +124,10 @@ final class GameEngine {
     /// Updated by the scene view. Ignored by observation to prevent extra renders.
     @ObservationIgnored var tubeFrames: [Int: CGRect] = [:]
 
+    /// Current view scale factor applied to each tube (1.0 = no scale).
+    /// Updated by the scene view. Ignored by observation to prevent extra renders.
+    @ObservationIgnored var viewScale: CGFloat = 1.0
+
     enum GameState {
         case idle, playing, over
     }
@@ -237,9 +241,9 @@ final class GameEngine {
         let tiltSign: CGFloat = isTargetRight ? 1.0 : -1.0
         let signedTilt = tiltSign * pourTiltAngle
 
-        // Distance from tube center to neck opening (pour point).
+        // Distance from tube center to neck opening (pour point), scaled.
         // With .center anchor, rotation pivots around the tube's geometric center.
-        let mouthDist = TubeView.tubeHeight / 2 - TubeView.capHeight  // 76
+        let mouthDist = (TubeView.tubeHeight / 2 - TubeView.capHeight) * viewScale
 
         // Target mouth (neck opening of the target tube)
         let targetMouthX = targetFrame.midX
@@ -265,7 +269,7 @@ final class GameEngine {
             let frameDuration: UInt64 = 16_000_000 // ~60 fps (16ms)
 
             // === Phase 1: Lift tube center well above other tubes ===
-            let liftHeight: CGFloat = -130
+            let liftHeight: CGFloat = -(TubeView.tubeHeight * self.viewScale + 10)
             await animateValue(duration: 0.22, frameDuration: frameDuration) { t in
                 let eased = Self.easeInOut(t)
                 source.animationOffsetY = liftHeight * eased

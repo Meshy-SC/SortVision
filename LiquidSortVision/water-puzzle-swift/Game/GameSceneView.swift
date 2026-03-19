@@ -37,69 +37,68 @@ struct GameSceneView: View {
             )
 
             ZStack {
-                // Background tap target for deselection (full area, unscaled)
+                // Background tap target for deselection
                 Color.clear
                     .contentShape(Rectangle())
                     .onTapGesture {
                         engine.handleBackgroundTap()
                     }
 
-                // Scaled tube content + stream overlay
-                ZStack {
-                    // Tube layout
-                    VStack(spacing: layout.rowSpacing) {
-                        if layout.isTwoRows {
-                            let topCount = Int(ceil(Double(tubeCount) / 2.0))
-                            let bottomCount = tubeCount - topCount
+                // Tube layout
+                VStack(spacing: layout.rowSpacing * layout.scale) {
+                    if layout.isTwoRows {
+                        let topCount = Int(ceil(Double(tubeCount) / 2.0))
+                        let bottomCount = tubeCount - topCount
 
-                            tubeRow(
-                                tubes: Array(engine.tubes.prefix(topCount)),
-                                spacing: layout.tubeSpacing
-                            )
+                        tubeRow(
+                            tubes: Array(engine.tubes.prefix(topCount)),
+                            spacing: layout.tubeSpacing * layout.scale,
+                            tubeScale: layout.scale
+                        )
 
-                            tubeRow(
-                                tubes: Array(engine.tubes.suffix(bottomCount)),
-                                spacing: layout.tubeSpacing
-                            )
-                        } else {
-                            tubeRow(
-                                tubes: engine.tubes,
-                                spacing: layout.tubeSpacing
-                            )
-                        }
-                    }
-
-                    // Liquid stream overlay during pour
-                    if let anim = engine.pourAnimation, anim.isStreaming {
-                        liquidStreamOverlay(anim: anim)
+                        tubeRow(
+                            tubes: Array(engine.tubes.suffix(bottomCount)),
+                            spacing: layout.tubeSpacing * layout.scale,
+                            tubeScale: layout.scale
+                        )
+                    } else {
+                        tubeRow(
+                            tubes: engine.tubes,
+                            spacing: layout.tubeSpacing * layout.scale,
+                            tubeScale: layout.scale
+                        )
                     }
                 }
-                // Give content the unscaled natural size so tubes don't overflow
-                .frame(
-                    width: geometry.size.width / layout.scale,
-                    height: geometry.size.height / layout.scale
-                )
-                .coordinateSpace(name: sceneSpace)
-                .onPreferenceChange(TubeFramePreferenceKey.self) { frames in
-                    tubeFrames = frames
-                    engine.tubeFrames = frames
+
+                // Liquid stream overlay during pour
+                if let anim = engine.pourAnimation, anim.isStreaming {
+                    liquidStreamOverlay(anim: anim, tubeScale: layout.scale)
                 }
-                .scaleEffect(layout.scale)
-                // Constrain layout frame to actual available size
-                .frame(width: geometry.size.width, height: geometry.size.height)
+            }
+            .coordinateSpace(name: sceneSpace)
+            .onPreferenceChange(TubeFramePreferenceKey.self) { frames in
+                tubeFrames = frames
+                engine.tubeFrames = frames
+                engine.viewScale = layout.scale
             }
         }
     }
 
     // MARK: - Tube Row
 
-    private func tubeRow(tubes: [TubeState], spacing: CGFloat) -> some View {
-        HStack(spacing: spacing) {
+    private func tubeRow(tubes: [TubeState], spacing: CGFloat, tubeScale: CGFloat) -> some View {
+        let scaledWidth = TubeView.tubeWidth * tubeScale
+        let scaledHeight = TubeView.tubeHeight * tubeScale
+
+        return HStack(spacing: spacing) {
             ForEach(tubes) { tube in
                 TubeView(tube: tube) {
                     engine.handleTubeTap(tube)
                 }
-                // Capture base frame BEFORE animation transforms
+                // Scale tube visual, then set layout frame to scaled size
+                .scaleEffect(tubeScale)
+                .frame(width: scaledWidth, height: scaledHeight)
+                // Capture base frame AFTER scale — positions are in screen space
                 .background(
                     GeometryReader { geo in
                         Color.clear
@@ -109,7 +108,7 @@ struct GameSceneView: View {
                             )
                     }
                 )
-                // Animation transforms applied externally for base-frame capture
+                // Animation transforms in screen space
                 .offset(y: tube.isPending && !tube.isAnimating ? -TubeView.pendingLift : 0)
                 .rotationEffect(.radians(tube.tiltAngle), anchor: .center)
                 .offset(x: tube.animationOffsetX, y: tube.animationOffsetY)
@@ -124,51 +123,22 @@ struct GameSceneView: View {
 
     // MARK: - Liquid Stream Overlay
 
-    private func liquidStreamOverlay(anim: GameEngine.PourAnimation) -> some View {
-        let sourceFrame = tubeFrames[anim.sourceIndex] ?? .zero
+    private func liquidStreamOverlay(anim: GameEngine.PourAnimation, tubeScale: CGFloat) -> some View {
         let targetFrame = tubeFrames[anim.targetIndex] ?? .zero
 
-        // Source tube animation state
-        let sourceTube = engine.tubes.first { $0.index == anim.sourceIndex }
-        let tiltAngle = sourceTube?.tiltAngle ?? 0
-        let offsetX = sourceTube?.animationOffsetX ?? 0
-        let offsetY = sourceTube?.animationOffsetY ?? 0
+        // The pour animation aligns the source mouth with the target mouth,
+        // so just use the target tube's positions for both stream endpoints.
+        let mouthY = targetFrame.minY + TubeView.capHeight * tubeScale
+        let bodyY = targetFrame.minY + (TubeView.capHeight + TubeView.neckHeight) * tubeScale + 15
 
-        // With .center anchor, the rotation pivot is at the center of the tube.
-        // The mouth (neck opening) is tubeHeight/2 - capHeight above center.
-        let mouthDist = TubeView.tubeHeight / 2 - TubeView.capHeight
-
-        // Mouth position relative to center (anchor point)
-        let localX: CGFloat = 0
-        let localY: CGFloat = -mouthDist
-
-        // Rotate around the center anchor
-        let cosA = cos(tiltAngle)
-        let sinA = sin(tiltAngle)
-        let rotatedX = localX * cosA - localY * sinA
-        let rotatedY = localX * sinA + localY * cosA
-
-        // Center of tube in scene coords (with animation offsets)
-        let anchorPoint = CGPoint(
-            x: sourceFrame.midX + offsetX,
-            y: sourceFrame.midY + offsetY
-        )
-        let sourceLip = CGPoint(
-            x: anchorPoint.x + rotatedX,
-            y: anchorPoint.y + rotatedY
-        )
-
-        // Target opening: into the body of the target tube for a visible stream
-        let targetOpening = CGPoint(
-            x: targetFrame.midX,
-            y: targetFrame.minY + TubeView.capHeight + TubeView.neckHeight + 20
-        )
+        let streamFrom = CGPoint(x: targetFrame.midX, y: mouthY)
+        let streamTo = CGPoint(x: targetFrame.midX, y: bodyY)
 
         let streamColor = ColorPalette.color(for: anim.colorGroupId)
 
         return LiquidStreamView(
-            from: sourceLip,
-            to: targetOpening,
+            from: streamFrom,
+            to: streamTo,
             color: streamColor,
             progress: anim.pourProgress
         )
