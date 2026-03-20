@@ -11,12 +11,12 @@ struct Liquid: Identifiable, Equatable, Hashable, Sendable {
     /// Index into `ColorPalette.colors` (0–11).
     let groupId: Int
     /// Number of liquid units this segment occupies.
-    var value: CGFloat
+    var volume: CGFloat
 
-    init(groupId: Int, value: CGFloat) {
+    init(groupId: Int, volume: CGFloat) {
         self.id = UUID()
         self.groupId = groupId
-        self.value = value
+        self.volume = volume
     }
 }
 
@@ -47,7 +47,7 @@ final class TubeState: Identifiable {
     var liquids: [Liquid] = []
 
     /// Whether this tube is in the raised "selected" state.
-    var isPending: Bool = false
+    var isSelected: Bool = false
 
     /// Vertical offset applied during pour animation (e.g. lift, arc).
     var animationOffsetY: CGFloat = 0
@@ -70,7 +70,7 @@ final class TubeState: Identifiable {
     // MARK: - Computed Properties
 
     /// Whether the tube is completely full (total liquid ≥ maxValue).
-    var isFull: Bool { Int(totalLiquidValue.rounded()) >= Self.maxValue }
+    var isFull: Bool { Int(totalVolume.rounded()) >= Self.maxValue }
 
     /// Whether the tube contains no liquid.
     var isEmpty: Bool { liquids.isEmpty }
@@ -79,11 +79,11 @@ final class TubeState: Identifiable {
     var topLiquid: Liquid? { liquids.last }
 
     /// Total liquid volume across all segments.
-    var totalLiquidValue: CGFloat { liquids.reduce(0) { $0 + $1.value } }
+    var totalVolume: CGFloat { liquids.reduce(0) { $0 + $1.volume } }
 
     /// Remaining capacity in liquid units.
     var remainingCapacity: CGFloat {
-        CGFloat(Self.maxValue) - totalLiquidValue
+        CGFloat(Self.maxValue) - totalVolume
     }
 
     // MARK: - Population
@@ -93,7 +93,7 @@ final class TubeState: Identifiable {
     /// - Parameter segments: Array of `LiquidSegment` values defining
     ///   the initial contents, ordered bottom to top.
     func populate(with segments: [LiquidSegment]) {
-        liquids = segments.map { Liquid(groupId: $0.groupId, value: $0.value) }
+        liquids = segments.map { Liquid(groupId: $0.groupId, volume: $0.volume) }
     }
 
     // MARK: - Liquid Management
@@ -103,8 +103,8 @@ final class TubeState: Identifiable {
     /// - Parameters:
     ///   - groupId: Color group index for the liquid.
     ///   - value: Volume in liquid units.
-    func addLiquid(groupId: Int, value: CGFloat) {
-        liquids.append(Liquid(groupId: groupId, value: value))
+    func addLiquid(groupId: Int, volume: CGFloat) {
+        liquids.append(Liquid(groupId: groupId, volume: volume))
     }
 
     /// Removes and returns the top liquid segment.
@@ -120,6 +120,6 @@ final class TubeState: Identifiable {
         animationOffsetX = 0
         animationOffsetY = 0
         tiltAngle = 0
-        isPending = false
+        isSelected = false
     }
 }

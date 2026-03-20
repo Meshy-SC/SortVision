@@ -21,7 +21,7 @@ struct GameSceneView: View {
     let engine: GameEngine
 
     /// Maximum tubes in a single row before splitting into two rows.
-    private let maxPerRow = 7
+    private let maximumTubesPerRow = 7
 
     /// Collected tube frames in the scene coordinate space.
     @State private var tubeFrames: [Int: CGRect] = [:]
@@ -146,12 +146,12 @@ struct GameSceneView: View {
                     .frame(width: scaledWidth, height: scaledHeight)
                     // Animation transforms happen inside the fixed layout slot so
                     // stream anchors can be computed from the stable wrapper frame.
-                    .offset(y: tube.isPending && !tube.isAnimating ? -TubeView.pendingLift : 0)
+                    .offset(y: tube.isSelected && !tube.isAnimating ? -TubeView.selectionLift : 0)
                     .rotationEffect(.radians(tube.tiltAngle), anchor: .center)
                     .offset(x: tube.animationOffsetX, y: tube.animationOffsetY)
                     .animation(
                         tube.isAnimating ? nil : .spring(response: 0.25, dampingFraction: 0.7),
-                        value: tube.isPending
+                        value: tube.isSelected
                     )
                 }
                 .frame(width: scaledWidth, height: scaledHeight)
@@ -280,7 +280,7 @@ struct GameSceneView: View {
     }
 
     private func calculateLayout(tubeCount: Int, availableSize: CGSize) -> LayoutInfo {
-        let isTwoRows = tubeCount > maxPerRow
+        let isTwoRows = tubeCount > maximumTubesPerRow
         let rowCount = isTwoRows ? Int(ceil(Double(tubeCount) / 2.0)) : tubeCount
 
         let tubeSpacing: CGFloat = 10

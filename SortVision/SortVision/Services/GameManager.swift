@@ -6,7 +6,12 @@ import WidgetKit
 
 /// Decoded from World{N}Data.json — extracts optimal move counts per level.
 struct WorldData: Decodable, Sendable {
-    let optimalPushCounts: [Int]
+    let optimalMoveCounts: [Int]
+
+    /// Maps Swift property names to JSON keys, preserving serialization compatibility.
+    private enum CodingKeys: String, CodingKey {
+        case optimalMoveCounts = "optimalPushCounts"
+    }
 }
 
 /// Central game state manager responsible for level data and progress tracking.
@@ -123,7 +128,7 @@ final class GameManager {
                 let data = try Data(contentsOf: url)
                 let worldData = try JSONDecoder().decode(WorldData.self, from: data)
                 let offset = stage.rawValue * Stage.levelsPerStage
-                for (index, optimal) in worldData.optimalPushCounts.enumerated() {
+                for (index, optimal) in worldData.optimalMoveCounts.enumerated() {
                     let globalNumber = offset + index + 1
                     optimalMoves[globalNumber] = optimal
                 }

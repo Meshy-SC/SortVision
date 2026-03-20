@@ -19,7 +19,12 @@ final class GameEngine {
     // MARK: - Callbacks
 
     var onLevelComplete: (() -> Void)?
-    var onSaveProgress: ((Int, Int) -> Void)?  // (levelNumber, moveCount)
+
+    /// Called when a level is completed with the level number and move count.
+    ///
+    /// - Parameter levelNumber: The global level number that was completed.
+    /// - Parameter moveCount: The number of moves the player used.
+    var onRecordLevelResult: ((_ levelNumber: Int, _ moveCount: Int) -> Void)?
 
     // MARK: - Game State
 
@@ -91,28 +96,28 @@ final class GameEngine {
     func handleTubeTap(_ tube: TubeState) {
         guard gameState == .playing, !isTransferring else { return }
 
-        let pending = tubes.first { $0.isPending }
+        let selected = tubes.first { $0.isSelected }
 
-        switch (pending, tube.isEmpty) {
-        case let (pending?, _) where pending.id != tube.id:
-            // A different tube is pending — check if transfer is valid
+        switch (selected, tube.isEmpty) {
+        case let (selected?, _) where selected.id != tube.id:
+            // A different tube is selected — check if transfer is valid
             let canPour = tube.topLiquid == nil
-                || (pending.topLiquid?.groupId == tube.topLiquid?.groupId && !tube.isFull)
+                || (selected.topLiquid?.groupId == tube.topLiquid?.groupId && !tube.isFull)
             if canPour {
-                performPour(from: pending, to: tube)
+                performPour(from: selected, to: tube)
             } else {
-                // Invalid target — switch pending to tapped tube
-                pending.isPending = false
+                // Invalid target — switch selection to tapped tube
+                selected.isSelected = false
                 soundPlayer.play(.push)
                 guard !tube.isEmpty else { break }
-                tube.isPending = true
+                tube.isSelected = true
                 soundPlayer.play(.pop)
             }
 
         case (_, false):
-            // No pending (or tapped same pending tube) — toggle
-            tube.isPending.toggle()
-            soundPlayer.play(tube.isPending ? .pop : .push)
+            // No selection (or tapped same selected tube) — toggle
+            tube.isSelected.toggle()
+            soundPlayer.play(tube.isSelected ? .pop : .push)
 
         default:
             break
@@ -122,8 +127,8 @@ final class GameEngine {
     /// Called when the user taps empty space.
     func handleBackgroundTap() {
         guard gameState == .playing, !isTransferring else { return }
-        if let pending = tubes.first(where: { $0.isPending }) {
-            pending.isPending = false
+        if let selected = tubes.first(where: { $0.isSelected }) {
+            selected.isSelected = false
             soundPlayer.play(.push)
         }
     }
@@ -139,15 +144,15 @@ final class GameEngine {
               target.topLiquid == nil || target.topLiquid?.groupId == sourceLiquid.groupId
         else { return }
 
-        source.isPending = false
+        source.isSelected = false
         isTransferring = true
         moveCount += 1
 
         // Snapshot tube liquids for undo
         undoHistory.append(tubes.map { $0.liquids })
 
-        let transferValue = min(
-            sourceLiquid.value,
+        let transferVolume = min(
+            sourceLiquid.volume,
             target.remainingCapacity
         )
 
@@ -177,7 +182,7 @@ final class GameEngine {
         let finalOffsetX = pourTarget.x - sourceFrame.midX - sourcePourLip.x
         let finalOffsetY = pourTarget.y - sourceFrame.midY - sourcePourLip.y
 
-        // Prevent isPending spring by marking as animating immediately
+        // Prevent isSelected spring by marking as animating immediately
         source.animationOffsetY = -0.01
 
         pourAnimation = PourAnimation(
@@ -212,23 +217,23 @@ final class GameEngine {
             soundPlayer.play(.water)
             pourAnimation?.isStreaming = true
 
-            let sourceStartValue = sourceLiquid.value
-            var targetStartValue: CGFloat = 0
+            let sourceStartVolume = sourceLiquid.volume
+            var targetStartVolume: CGFloat = 0
             if let existing = target.topLiquid, existing.groupId == colorGroupId {
-                targetStartValue = existing.value
+                targetStartVolume = existing.volume
             } else {
-                target.addLiquid(groupId: colorGroupId, value: 0)
+                target.addLiquid(groupId: colorGroupId, volume: 0)
             }
 
             await animateValue(duration: 0.45, frameDuration: frameDuration) { t in
                 let eased = Self.easeInOut(t)
 
-                // Update liquid values
+                // Update liquid volumes
                 if let srcIdx = source.liquids.indices.last {
-                    source.liquids[srcIdx].value = sourceStartValue - transferValue * eased
+                    source.liquids[srcIdx].volume = sourceStartVolume - transferVolume * eased
                 }
                 if let tgtIdx = target.liquids.indices.last {
-                    target.liquids[tgtIdx].value = targetStartValue + transferValue * eased
+                    target.liquids[tgtIdx].volume = targetStartVolume + transferVolume * eased
                 }
 
                 self.pourAnimation?.pourProgress = eased
@@ -253,16 +258,16 @@ final class GameEngine {
             source.resetAnimation()
             pourAnimation = nil
 
-            // Snap liquid values
+            // Snap liquid volumes
             if let last = source.liquids.last {
-                if last.value <= 0.05 {
+                if last.volume <= 0.05 {
                     source.removeTopLiquid()
                 } else {
-                    source.liquids[source.liquids.count - 1].value = last.value.rounded()
+                    source.liquids[source.liquids.count - 1].volume = last.volume.rounded()
                 }
             }
             if let tgtIdx = target.liquids.indices.last {
-                target.liquids[tgtIdx].value = target.liquids[tgtIdx].value.rounded()
+                target.liquids[tgtIdx].volume = target.liquids[tgtIdx].volume.rounded()
             }
 
             isTransferring = false
@@ -309,7 +314,7 @@ final class GameEngine {
         soundPlayer.play(.win)
 
         if let level {
-            onSaveProgress?(level.number, moveCount)
+            onRecordLevelResult?(level.number, moveCount)
         }
 
         Task { @MainActor in

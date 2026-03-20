@@ -47,7 +47,7 @@ struct TubeView: View {
     static let wallThickness: CGFloat = 2.5
 
     /// Vertical offset when the tube is selected.
-    static let pendingLift: CGFloat = 20
+    static let selectionLift: CGFloat = 20
 
     /// Height per liquid unit within the body.
     static let unitHeight: CGFloat = (bodyHeight - wallThickness * 2) / CGFloat(TubeState.maxValue)
@@ -282,7 +282,7 @@ struct TubeView: View {
             // Liquids are bottom-to-top; VStack top-to-bottom so reverse.
             ForEach(Array(tube.liquids.enumerated().reversed()), id: \.element.id) { index, liquid in
                 let isTopSegment = (index == tube.liquids.count - 1)
-                let segmentHeight = Self.unitHeight * liquid.value
+                let segmentHeight = Self.unitHeight * liquid.volume
                 let color = ColorPalette.color(for: liquid.groupId)
 
                 ZStack(alignment: .top) {
@@ -313,7 +313,7 @@ struct TubeView: View {
                     .frame(height: segmentHeight)
 
                     // Rounded top surface for the topmost liquid segment
-                    if isTopSegment && liquid.value > 0.3 {
+                    if isTopSegment && liquid.volume > 0.3 {
                         Ellipse()
                             .fill(color.opacity(0.5))
                             .frame(width: liquidWidth, height: 10)
@@ -348,9 +348,9 @@ struct TubeView: View {
     private var accessibilityLabel: String {
         guard !tube.isEmpty else { return "Empty tube" }
         let contents = tube.liquids
-            .map { "\(Int($0.value.rounded())) \(colorName(for: $0.groupId))" }
+            .map { "\(Int($0.volume.rounded())) \(colorName(for: $0.groupId))" }
             .joined(separator: ", ")
-        return "Tube with \(contents)\(tube.isPending ? ", selected" : "")"
+        return "Tube with \(contents)\(tube.isSelected ? ", selected" : "")"
     }
 
     private func colorName(for groupId: Int) -> String {

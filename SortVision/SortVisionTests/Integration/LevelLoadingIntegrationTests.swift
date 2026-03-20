@@ -46,7 +46,7 @@ struct LevelLoadingIntegrationTests {
     func everyLevelHasEmptyTube(stage: Stage) {
         let levels = GameManager.shared.levels(for: stage)
         for level in levels {
-            let hasEmpty = level.columns.contains { $0.values.isEmpty }
+            let hasEmpty = level.columns.contains { $0.colorGroupIds.isEmpty }
             #expect(hasEmpty,
                     "\(stage.displayName) level \(level.number) should have at least one empty tube")
         }
@@ -58,7 +58,7 @@ struct LevelLoadingIntegrationTests {
         let levels = GameManager.shared.levels(for: stage)
         for level in levels {
             for (colIdx, column) in level.columns.enumerated() {
-                #expect(column.values.count <= TubeState.maxValue,
+                #expect(column.colorGroupIds.count <= TubeState.maxValue,
                         "\(stage.displayName) level \(level.number) column \(colIdx) exceeds max capacity")
             }
         }
@@ -72,9 +72,9 @@ struct LevelLoadingIntegrationTests {
 
         for level in levels {
             for (colIdx, column) in level.columns.enumerated() {
-                for value in column.values {
-                    #expect(validRange.contains(value),
-                            "\(stage.displayName) level \(level.number) column \(colIdx) has invalid groupId \(value)")
+                for colorGroupId in column.colorGroupIds {
+                    #expect(validRange.contains(colorGroupId),
+                            "\(stage.displayName) level \(level.number) column \(colIdx) has invalid groupId \(colorGroupId)")
                 }
             }
         }

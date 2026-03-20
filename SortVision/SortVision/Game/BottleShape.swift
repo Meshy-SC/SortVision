@@ -35,23 +35,23 @@ struct BottleShape: Shape {
         let halfBody = bodyWidth / 2
         let halfNeck = neckWidth / 2
         let halfCap = (neckWidth + 10) / 2  // cap wider than neck
-        let cr = min(bottomRadius, halfBody)
+        let effectiveCornerRadius = min(bottomRadius, halfBody)
 
         // --- Cap (dark stopper) ---
-        let capCR: CGFloat = 5
+        let capCornerRadius: CGFloat = 5
         path.move(to: CGPoint(x: centerX - halfCap, y: neckTop))
-        path.addLine(to: CGPoint(x: centerX - halfCap, y: capTop + capCR))
+        path.addLine(to: CGPoint(x: centerX - halfCap, y: capTop + capCornerRadius))
         path.addArc(
-            center: CGPoint(x: centerX - halfCap + capCR, y: capTop + capCR),
-            radius: capCR,
+            center: CGPoint(x: centerX - halfCap + capCornerRadius, y: capTop + capCornerRadius),
+            radius: capCornerRadius,
             startAngle: .degrees(180),
             endAngle: .degrees(270),
             clockwise: false
         )
-        path.addLine(to: CGPoint(x: centerX + halfCap - capCR, y: capTop))
+        path.addLine(to: CGPoint(x: centerX + halfCap - capCornerRadius, y: capTop))
         path.addArc(
-            center: CGPoint(x: centerX + halfCap - capCR, y: capTop + capCR),
-            radius: capCR,
+            center: CGPoint(x: centerX + halfCap - capCornerRadius, y: capTop + capCornerRadius),
+            radius: capCornerRadius,
             startAngle: .degrees(270),
             endAngle: .degrees(0),
             clockwise: false
@@ -69,24 +69,24 @@ struct BottleShape: Shape {
         )
 
         // Right body side down
-        path.addLine(to: CGPoint(x: centerX + halfBody, y: bottom - cr))
+        path.addLine(to: CGPoint(x: centerX + halfBody, y: bottom - effectiveCornerRadius))
 
         // Bottom-right corner
         path.addArc(
-            center: CGPoint(x: centerX + halfBody - cr, y: bottom - cr),
-            radius: cr,
+            center: CGPoint(x: centerX + halfBody - effectiveCornerRadius, y: bottom - effectiveCornerRadius),
+            radius: effectiveCornerRadius,
             startAngle: .degrees(0),
             endAngle: .degrees(90),
             clockwise: false
         )
 
         // Bottom edge
-        path.addLine(to: CGPoint(x: centerX - halfBody + cr, y: bottom))
+        path.addLine(to: CGPoint(x: centerX - halfBody + effectiveCornerRadius, y: bottom))
 
         // Bottom-left corner
         path.addArc(
-            center: CGPoint(x: centerX - halfBody + cr, y: bottom - cr),
-            radius: cr,
+            center: CGPoint(x: centerX - halfBody + effectiveCornerRadius, y: bottom - effectiveCornerRadius),
+            radius: effectiveCornerRadius,
             startAngle: .degrees(90),
             endAngle: .degrees(180),
             clockwise: false

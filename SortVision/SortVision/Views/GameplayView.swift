@@ -130,7 +130,7 @@ struct GameplayView: View {
             completionMoves = gameEngine.moveCount
             showLevelComplete = true
         }
-        gameEngine.onSaveProgress = { levelNumber, moves in
+        gameEngine.onRecordLevelResult = { levelNumber, moves in
             let previousStars = gameManager.starRating(for: levelNumber)
             gameManager.completeLevel(number: levelNumber, moves: moves)
             let currentStars = gameManager.starRating(for: levelNumber)

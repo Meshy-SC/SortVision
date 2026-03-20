@@ -50,7 +50,7 @@ struct Level: Codable, Sendable, Identifiable, Hashable {
     ///
     /// For example, `[1, 1, 2]` becomes:
     /// ```
-    /// [LiquidSegment(groupId: 1, value: 2), LiquidSegment(groupId: 2, value: 1)]
+    /// [LiquidSegment(groupId: 1, volume: 2), LiquidSegment(groupId: 2, volume: 1)]
     /// ```
     ///
     /// Faithfully mirrors Unity `Level.GetLiquidDatas(LevelColumn)`.
@@ -61,21 +61,21 @@ struct Level: Codable, Sendable, Identifiable, Hashable {
     /// Compresses a column's raw color values into grouped `LiquidSegment` entries.
     ///
     /// Consecutive values with the same groupId are merged into a single entry
-    /// whose `value` equals the count of consecutive occurrences.
+    /// whose `volume` equals the count of consecutive occurrences.
     static func liquidSegments(from column: LevelColumn) -> [LiquidSegment] {
-        let values = column.values
-        guard !values.isEmpty else { return [] }
+        let colorGroupIds = column.colorGroupIds
+        guard !colorGroupIds.isEmpty else { return [] }
 
         var result: [LiquidSegment] = []
         var i = 0
-        while i < values.count {
-            let currentGroup = values[i]
+        while i < colorGroupIds.count {
+            let currentGroup = colorGroupIds[i]
             var count = 0
-            while i < values.count && values[i] == currentGroup {
+            while i < colorGroupIds.count && colorGroupIds[i] == currentGroup {
                 count += 1
                 i += 1
             }
-            result.append(LiquidSegment(groupId: currentGroup, value: CGFloat(count)))
+            result.append(LiquidSegment(groupId: currentGroup, volume: CGFloat(count)))
         }
         return result
     }
@@ -90,17 +90,22 @@ struct Level: Codable, Sendable, Identifiable, Hashable {
 struct LevelColumn: Codable, Sendable, Hashable {
     /// Color group IDs from bottom to top of the tube.
     /// Empty array represents an empty tube.
-    let values: [Int]
+    let colorGroupIds: [Int]
+
+    /// Maps Swift property names to JSON keys, preserving serialization compatibility.
+    private enum CodingKeys: String, CodingKey {
+        case colorGroupIds = "values"
+    }
 }
 
 /// A single liquid segment with a color group and volume.
 ///
 /// Produced by compressing consecutive same-color values in a `LevelColumn`.
-/// Used by `HolderNode.populate(with:)` to fill tubes at level start.
+/// Used by `TubeState.populate(with:)` to fill tubes at level start.
 struct LiquidSegment: Sendable, Equatable, Hashable {
-    /// Index into `ColorPalette.colors` (0–10).
+    /// Index into `ColorPalette.colors` (0–11).
     let groupId: Int
 
     /// Number of liquid units this segment occupies.
-    let value: CGFloat
+    let volume: CGFloat
 }
