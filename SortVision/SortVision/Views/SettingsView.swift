@@ -121,8 +121,8 @@ struct SettingsView: View {
         }
     }
 
-    private static let supportURL = URL(string: "https://github.com/Meshy-SC/SortVision/blob/main/SUPPORT")
-    private static let privacyURL = URL(string: "https://github.com/Meshy-SC/SortVision/blob/main/PRIVACY_POLICY")
+    private static let supportURL = URL(string: "https://github.com/Meshy-SC/SortVision/blob/main/SUPPORT.md")
+    private static let privacyURL = URL(string: "https://github.com/Meshy-SC/SortVision/blob/main/PRIVACY_POLICY.md")
 
     private var supportSection: some View {
         Section {
