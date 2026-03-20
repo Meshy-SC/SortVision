@@ -3,6 +3,17 @@ import Testing
 
 @testable import SortVision
 
+// MARK: - Mock Sound Player
+
+/// Silent mock that records played sounds for verification.
+/// Shared across all test files that need to test game engine behavior.
+@MainActor
+final class MockSoundPlayer: SoundPlayable {
+    var playedSounds: [GameSound] = []
+    func play(_ sound: GameSound) { playedSounds.append(sound) }
+    func reset() { playedSounds.removeAll() }
+}
+
 // MARK: - Level Test Fixtures
 
 /// Factory methods for creating test level data without coupling tests to JSON files.

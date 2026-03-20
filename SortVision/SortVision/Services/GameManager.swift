@@ -38,11 +38,15 @@ final class GameManager {
 
     /// UserDefaults key for the sound-enabled preference.
     /// Forwarded from `ProgressStore` for backward compatibility.
-    static var soundEnabledKey: String { ProgressStore.soundEnabledKey }
+    /// `nonisolated` because this only forwards to a constant (`static let`)
+    /// and is accessed from non-isolated contexts (e.g. `WidgetDataProvider`).
+    nonisolated static var soundEnabledKey: String { ProgressStore.soundEnabledKey }
 
     /// UserDefaults key for the highest completed global level number.
     /// Forwarded from `ProgressStore` for backward compatibility.
-    static var completionKey: String { ProgressStore.completionKey }
+    /// `nonisolated` because this only forwards to a constant (`static let`)
+    /// and is accessed from non-isolated contexts (e.g. `WidgetDataProvider`).
+    nonisolated static var completionKey: String { ProgressStore.completionKey }
 
     // MARK: - Level Cache
 

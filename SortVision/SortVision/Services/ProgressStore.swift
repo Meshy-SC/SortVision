@@ -21,10 +21,14 @@ enum ProgressStore {
     // MARK: - UserDefaults Keys
 
     /// Key for the sound-enabled preference.
-    static let soundEnabledKey = "soundEnabled"
+    /// `nonisolated` because these are immutable constants accessed
+    /// from non-isolated contexts (e.g. `WidgetDataProvider`, `SoundManager`).
+    nonisolated static let soundEnabledKey = "soundEnabled"
 
     /// Key for the highest completed global level number.
-    static let completionKey = "globalLevelCompleted"
+    /// `nonisolated` because these are immutable constants accessed
+    /// from non-isolated contexts (e.g. `WidgetDataProvider`).
+    nonisolated static let completionKey = "globalLevelCompleted"
 
     /// Key for per-level best move counts dictionary.
     static let bestMovesKey = "bestMoves"
