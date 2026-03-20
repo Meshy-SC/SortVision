@@ -6,9 +6,10 @@
 
 SortVision is available on the following Apple platforms:
 
-- **iOS** — iPhone
-- **macOS** — Mac
-- **visionOS** — Apple Vision Pro
+- **iOS 26+** — iPhone
+- **iPadOS 26+** — iPad
+- **macOS 26+** — Mac
+- **visionOS 26+** — Apple Vision Pro
 
 ## Frequently Asked Questions
 
@@ -25,10 +26,22 @@ SortVision features 1,000 puzzles across 10 difficulty tiers: Iron, Bronze, Silv
 **How do I earn 3 stars?**
 Complete a level in the optimal (fewest) number of moves. Star thresholds are based on the verified optimal solution for each puzzle.
 
-**How are stars calculated?**
-- **3 stars:** Complete in the optimal number of moves
-- **2 stars:** Complete in up to 1.5 times the optimal moves
-- **1 star:** Complete the level in any number of moves
+**What are Solution Credits?**
+Solution Credits let you view the optimal solution for any level. You start with a few free credits and can purchase more from the in-game store.
+
+### iCloud Sync
+
+**Does SortVision sync across my devices?**
+Yes! If iCloud is enabled, your progress, star ratings, and settings sync automatically across all your Apple devices signed in to the same iCloud account.
+
+**How do I enable or disable iCloud sync?**
+Go to **Settings > [your name] > iCloud** on your device and toggle SortVision on or off.
+
+**My data is not syncing. What should I do?**
+1. Ensure you are signed in to iCloud on all devices.
+2. Check that iCloud sync is enabled for SortVision in your device settings.
+3. Make sure you have an active internet connection.
+4. Try restarting the app.
 
 ### Controls
 
@@ -41,10 +54,12 @@ Complete a level in the optimal (fewest) number of moves. Star thresholds are ba
 - Click a tube to select it.
 - Click another tube to pour.
 - Click an empty area to deselect.
+- ⌘Z to undo the last move.
 
 **Apple Vision Pro**
 - Look at a tube to highlight it.
 - Tap to select and pour.
+- Use the toolbar and HUD ornament for controls.
 
 ### Troubleshooting
 
@@ -56,10 +71,10 @@ Complete a level in the optimal (fewest) number of moves. Star thresholds are ba
 
 **No sound.**
 - Check that your device is not in Silent Mode.
-- Verify that Sound Effects are enabled in the in-game Settings.
+- Verify that Music and Sound Effects are enabled in the in-game Settings.
 
 **A level seems unsolvable.**
-Every level has a verified solution. Try undoing your moves and taking a different approach.
+Every level has a verified solution. Try using a Solution Credit to see the optimal path, or undo your moves and try a different approach.
 
 ## Contact Us
 
@@ -68,7 +83,7 @@ If you need further assistance or have feedback, we would love to hear from you.
 **Email:** davinci.dalhi@gmail.com
 
 When contacting support, please include:
-- The device and platform you are using (e.g., iPhone / iOS, Mac / macOS, Apple Vision Pro / visionOS)
+- The device and platform you are using (e.g., iPhone / iOS 26, Mac / macOS 26, Apple Vision Pro / visionOS 26)
 - A description of the issue
 - Screenshots, if applicable
 
