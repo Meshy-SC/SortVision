@@ -1,1 +1,0 @@
-I need to ask a Claude Code To revise the generated levels and the script Understand if we have the best progressive puzzles over the levels and the worlds. Also check if we have already the question marks, the mystery slots. And if not, implement them as well. 
