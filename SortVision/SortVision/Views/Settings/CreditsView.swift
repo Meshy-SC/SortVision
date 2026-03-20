@@ -3,10 +3,6 @@ import SwiftUI
 /// Credits sub-page — shows app info and attribution.
 struct CreditsView: View {
 
-    private var appVersion: String {
-        Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "—"
-    }
-
     var body: some View {
         List {
             Section {
@@ -16,7 +12,7 @@ struct CreditsView: View {
                         Text("SortVision!")
                             .font(.title2.bold())
                             .multilineTextAlignment(.center)
-                        Text("Version \(appVersion)")
+                        Text("Version \(PlatformInfo.appVersion)")
                             .font(.subheadline)
                             .foregroundStyle(.secondary)
                     }

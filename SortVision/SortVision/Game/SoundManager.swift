@@ -50,15 +50,14 @@ final class SoundManager {
     // MARK: - Init
 
     private init() {
-        for sound in GameSound.allCases {
-            if let url = Bundle.main.url(
+        cachedData = GameSound.allCases.reduce(into: [:]) { cache, sound in
+            guard let url = Bundle.main.url(
                 forResource: sound.rawValue,
                 withExtension: sound.fileExtension
             ),
-               let data = try? Data(contentsOf: url)
-            {
-                cachedData[sound] = data
-            }
+                let data = try? Data(contentsOf: url)
+            else { return }
+            cache[sound] = data
         }
     }
 

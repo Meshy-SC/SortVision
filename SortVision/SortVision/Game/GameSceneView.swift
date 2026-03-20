@@ -281,13 +281,7 @@ struct GameSceneView: View {
 
     private func calculateLayout(tubeCount: Int, availableSize: CGSize) -> LayoutInfo {
         let isTwoRows = tubeCount > maxPerRow
-
-        let rowCount: Int
-        if isTwoRows {
-            rowCount = Int(ceil(Double(tubeCount) / 2.0))
-        } else {
-            rowCount = tubeCount
-        }
+        let rowCount = isTwoRows ? Int(ceil(Double(tubeCount) / 2.0)) : tubeCount
 
         let tubeSpacing: CGFloat = 10
         let rowSpacing: CGFloat = isTwoRows ? 40 : 0
@@ -295,8 +289,7 @@ struct GameSceneView: View {
         // Natural content size at 1x scale
         let contentWidth = CGFloat(rowCount) * TubeView.tubeWidth
             + CGFloat(max(rowCount - 1, 0)) * tubeSpacing
-        let numberOfRows = CGFloat(isTwoRows ? 2 : 1)
-        let contentHeight = numberOfRows * TubeView.tubeHeight + rowSpacing
+        let contentHeight = CGFloat(isTwoRows ? 2 : 1) * TubeView.tubeHeight + rowSpacing
 
         // Scale to fit within available space (with small margin)
         let margin: CGFloat = 16

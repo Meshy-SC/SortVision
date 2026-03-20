@@ -92,9 +92,10 @@ struct StageSelectionView: View {
     // MARK: - Overall Progress
 
     private var overallCompletionPercentage: Double {
-        let totalLevels = Stage.allCases.reduce(0) { $0 + gameManager.levels(for: $1).count }
+        let stages = Stage.allCases
+        let totalLevels = stages.reduce(0) { $0 + gameManager.levels(for: $1).count }
         guard totalLevels > 0 else { return 0 }
-        let totalCompleted = Stage.allCases.reduce(0) { $0 + gameManager.completedCountInStage($1) }
+        let totalCompleted = stages.reduce(0) { $0 + gameManager.completedCountInStage($1) }
         return Double(totalCompleted) / Double(totalLevels) * 100
     }
 

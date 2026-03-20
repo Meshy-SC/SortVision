@@ -48,11 +48,10 @@ struct LevelGridView: View {
     // MARK: - Gauges Section
 
     private var gaugesSection: some View {
-        HStack(spacing: 30) {
-            let levels = gameManager.levels(for: stage)
-            let completedInStage = gameManager.completedCountInStage(stage)
-            let total = levels.count
+        let total = gameManager.levels(for: stage).count
+        let completedInStage = gameManager.completedCountInStage(stage)
 
+        return HStack(spacing: 30) {
             CircularStatGauge(
                 title: "Progress",
                 value: total > 0 ? Double(completedInStage) / Double(total) * 100 : 0,
@@ -62,7 +61,7 @@ struct LevelGridView: View {
             CircularStatGauge(
                 title: "Stars",
                 value: Double(totalStarsInStage),
-                maxValue: Double(gameManager.levels(for: stage).count * 3),
+                maxValue: Double(total * 3),
                 tintColor: .yellow
             )
         }
@@ -74,7 +73,7 @@ struct LevelGridView: View {
         let levels = gameManager.levels(for: stage)
 
         return LazyVGrid(columns: columns, spacing: 14) {
-            ForEach(Array(levels.enumerated()), id: \.offset) { index, level in
+            ForEach(levels) { level in
                 let displayNumber = Stage.localLevelNumber(for: level.number)
                 let star = gameManager.starRating(for: level.number)
                 let isLocked = gameManager.isLevelLocked(level.number)
@@ -89,16 +88,17 @@ struct LevelGridView: View {
                     guard !isLocked else { return }
                     path.append(AppScreen.gameplay(stage, level))
                 }
-                .id("level-\(index)")
+                .id("level-\(level.id)")
             }
         }
         .accessibilityRotor("Incomplete Levels") {
-            ForEach(Array(levels.enumerated()), id: \.offset) { index, _ in
-                let star = gameManager.starRating(for: levels[index].number)
+            ForEach(levels) { level in
+                let star = gameManager.starRating(for: level.number)
                 if star == 0 {
+                    let displayNumber = Stage.localLevelNumber(for: level.number)
                     AccessibilityRotorEntry(
-                        "Level \(index + 1)",
-                        id: "level-\(index)"
+                        "Level \(displayNumber)",
+                        id: "level-\(level.id)"
                     )
                 }
             }

@@ -68,26 +68,25 @@ enum ProgressStore {
     ///
     /// - Returns: Dictionary mapping global level numbers to best move counts.
     static func loadBestMoves() -> [Int: Int] {
-        guard let dict = UserDefaults.standard.dictionary(forKey: bestMovesKey) as? [String: Int]
-        else { return [:] }
-
-        return Dictionary(uniqueKeysWithValues: dict.compactMap { key, value in
-            guard let intKey = Int(key) else { return nil }
-            return (intKey, value)
-        })
+        loadIntDict(forKey: bestMovesKey)
     }
 
     /// Loads per-level star ratings from UserDefaults.
     ///
     /// - Returns: Dictionary mapping global level numbers to star ratings (0–3).
     static func loadStarRatings() -> [Int: Int] {
-        guard let dict = UserDefaults.standard.dictionary(forKey: starRatingsKey) as? [String: Int]
-        else { return [:] }
+        loadIntDict(forKey: starRatingsKey)
+    }
 
-        return Dictionary(uniqueKeysWithValues: dict.compactMap { key, value in
-            guard let intKey = Int(key) else { return nil }
-            return (intKey, value)
-        })
+    /// Shared helper to load a `[String: Int]` dictionary from UserDefaults
+    /// and convert it to `[Int: Int]`, discarding non-integer keys.
+    private static func loadIntDict(forKey key: String) -> [Int: Int] {
+        guard let dict = UserDefaults.standard.dictionary(forKey: key) as? [String: Int]
+        else { return [:] }
+        return dict.reduce(into: [:]) { result, pair in
+            guard let intKey = Int(pair.key) else { return }
+            result[intKey] = pair.value
+        }
     }
 
     /// Saves best moves and star ratings to UserDefaults.
@@ -125,12 +124,9 @@ enum ProgressStore {
             ("expert_Level_Complete", 300),
         ]
 
-        var maxGlobal = 0
-        for (key, offset) in legacyModes {
-            let completed = UserDefaults.standard.integer(forKey: key)
-            if completed > 0 {
-                maxGlobal = max(maxGlobal, offset + completed)
-            }
+        let maxGlobal = legacyModes.reduce(0) { result, mode in
+            let completed = UserDefaults.standard.integer(forKey: mode.key)
+            return completed > 0 ? max(result, mode.offset + completed) : result
         }
 
         if maxGlobal > 0 {

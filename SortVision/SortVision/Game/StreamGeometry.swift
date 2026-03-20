@@ -21,11 +21,10 @@ enum StreamGeometry {
     /// - Parameter progress: Pour progress from 0 to 1.
     /// - Returns: Thickness multiplier from 0 to 1.
     static func thickness(for progress: CGFloat) -> CGFloat {
-        if progress < 0.08 {
-            return progress / 0.08
-        } else if progress > 0.88 {
-            return (1.0 - progress) / 0.12
+        switch progress {
+        case ..<0.08:  progress / 0.08
+        case 0.88...:  (1.0 - progress) / 0.12
+        default:       1.0
         }
-        return 1.0
     }
 }

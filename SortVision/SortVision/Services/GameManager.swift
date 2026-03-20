@@ -198,11 +198,7 @@ final class GameManager {
 
     /// Returns the number of completed levels within a specific stage.
     func completedCountInStage(_ stage: Stage) -> Int {
-        let range = stage.levelRange
-        if completedLevel < range.lowerBound {
-            return 0
-        }
-        return min(completedLevel - range.lowerBound + 1, Stage.levelsPerStage)
+        max(0, min(completedLevel - stage.levelRange.lowerBound + 1, Stage.levelsPerStage))
     }
 
     /// Checks whether a level is locked (not yet reachable by the player).
@@ -274,21 +270,11 @@ final class GameManager {
         }
 
         // Update best move count (keep lowest)
-        if let existing = bestMoves[number] {
-            if moves < existing {
-                bestMoves[number] = moves
-            }
-        } else {
-            bestMoves[number] = moves
-        }
+        bestMoves[number] = min(moves, bestMoves[number] ?? .max)
 
         // Calculate and store star rating (keep highest)
-        let optimal = optimalMoves[number]
-        let newStars = Self.calculateStars(moves: moves, optimal: optimal)
-        let existingStars = starRatings[number] ?? 0
-        if newStars > existingStars {
-            starRatings[number] = newStars
-        }
+        let newStars = Self.calculateStars(moves: moves, optimal: optimalMoves[number])
+        starRatings[number] = max(newStars, starRatings[number] ?? 0)
 
         saveBestMoves()
     }
@@ -302,7 +288,7 @@ final class GameManager {
 
     /// Maximum possible stars across all available levels.
     var maxStars: Int {
-        Stage.allCases.reduce(0) { $0 + levels(for: $1).count * 3 }
+        Stage.allCases.reduce(0) { total, stage in total + levels(for: stage).count * 3 }
     }
 
     // MARK: - Reset Progress

@@ -27,9 +27,7 @@ enum WidgetDataProvider {
 
     /// Returns the world the player is currently in.
     static func currentStage() -> Stage {
-        let completed = completedLevel()
-        if completed == 0 { return .iron }
-        return Stage.stage(for: completed) ?? .iron
+        Stage.stage(for: completedLevel()) ?? .iron
     }
 
     /// Summary data for the player's overall game progress, used by the widget.
@@ -48,9 +46,7 @@ enum WidgetDataProvider {
 
         /// Number of completed levels within the current stage.
         var stageCompletedCount: Int {
-            let range = currentStage.levelRange
-            if completedCount < range.lowerBound { return 0 }
-            return min(completedCount - range.lowerBound + 1, Stage.levelsPerStage)
+            max(0, min(completedCount - currentStage.levelRange.lowerBound + 1, Stage.levelsPerStage))
         }
 
         /// Progress within the current stage from 0.0 to 1.0.

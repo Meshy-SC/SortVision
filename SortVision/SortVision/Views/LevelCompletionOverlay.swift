@@ -134,9 +134,7 @@ struct LevelCompletionOverlay: View, PlatformAdaptiveSizing {
                 // Action buttons
                 VStack(spacing: 12) {
                     if gameManager.hasNextLevel(after: level.number) {
-                        Button {
-                            navigateToNextLevel()
-                        } label: {
+                        Button(action: navigateToNextLevel) {
                             Text("Continue")
                                 .font(.headline)
                                 .foregroundStyle(.white)

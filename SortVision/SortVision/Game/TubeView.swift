@@ -346,14 +346,10 @@ struct TubeView: View {
     // MARK: - Accessibility
 
     private var accessibilityLabel: String {
-        if tube.isEmpty {
-            return "Empty tube"
-        }
-        let contents = tube.liquids.map { liquid in
-            let colorName = colorName(for: liquid.groupId)
-            let units = Int(liquid.value.rounded())
-            return "\(units) \(colorName)"
-        }.joined(separator: ", ")
+        guard !tube.isEmpty else { return "Empty tube" }
+        let contents = tube.liquids
+            .map { "\(Int($0.value.rounded())) \(colorName(for: $0.groupId))" }
+            .joined(separator: ", ")
         return "Tube with \(contents)\(tube.isPending ? ", selected" : "")"
     }
 

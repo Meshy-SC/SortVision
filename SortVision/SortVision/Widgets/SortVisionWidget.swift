@@ -133,11 +133,11 @@ struct SortVisionWidgetView: View {
 
     // MARK: - Helpers
 
+    // swiftlint:disable:next force_unwrapping
+    private static let fallbackURL = URL(string: "flowvision://play")!
+
     private func deepLinkURL(level: Int) -> URL {
-        guard let url = URL(string: "flowvision://play?level=\(level)") else {
-            return URL(string: "flowvision://play")!
-        }
-        return url
+        URL(string: "flowvision://play?level=\(level)") ?? Self.fallbackURL
     }
 }
 

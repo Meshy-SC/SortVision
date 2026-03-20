@@ -91,33 +91,31 @@ final class GameEngine {
     func handleTubeTap(_ tube: TubeState) {
         guard gameState == .playing, !isTransferring else { return }
 
-        let pendingTube = tubes.first(where: { $0.isPending })
+        let pending = tubes.first { $0.isPending }
 
-        if let pending = pendingTube, pending.id != tube.id {
+        switch (pending, tube.isEmpty) {
+        case let (pending?, _) where pending.id != tube.id:
             // A different tube is pending — check if transfer is valid
-            if tube.topLiquid == nil ||
-                (pending.topLiquid?.groupId == tube.topLiquid?.groupId && !tube.isFull)
-            {
-                // Valid transfer — start pour
+            let canPour = tube.topLiquid == nil
+                || (pending.topLiquid?.groupId == tube.topLiquid?.groupId && !tube.isFull)
+            if canPour {
                 performPour(from: pending, to: tube)
             } else {
                 // Invalid target — switch pending to tapped tube
                 pending.isPending = false
                 soundPlayer.play(.push)
-                if !tube.isEmpty {
-                    tube.isPending = true
-                    soundPlayer.play(.pop)
-                }
-            }
-        } else if !tube.isEmpty {
-            // No pending, or tapped same pending — toggle
-            if tube.isPending {
-                tube.isPending = false
-                soundPlayer.play(.push)
-            } else {
+                guard !tube.isEmpty else { break }
                 tube.isPending = true
                 soundPlayer.play(.pop)
             }
+
+        case (_, false):
+            // No pending (or tapped same pending tube) — toggle
+            tube.isPending.toggle()
+            soundPlayer.play(tube.isPending ? .pop : .push)
+
+        default:
+            break
         }
     }
 
@@ -256,10 +254,12 @@ final class GameEngine {
             pourAnimation = nil
 
             // Snap liquid values
-            if let last = source.liquids.last, last.value <= 0.05 {
-                source.removeTopLiquid()
-            } else if let srcIdx = source.liquids.indices.last {
-                source.liquids[srcIdx].value = source.liquids[srcIdx].value.rounded()
+            if let last = source.liquids.last {
+                if last.value <= 0.05 {
+                    source.removeTopLiquid()
+                } else {
+                    source.liquids[source.liquids.count - 1].value = last.value.rounded()
+                }
             }
             if let tgtIdx = target.liquids.indices.last {
                 target.liquids[tgtIdx].value = target.liquids[tgtIdx].value.rounded()
@@ -294,8 +294,7 @@ final class GameEngine {
     // MARK: - Win Condition
 
     private func checkWinCondition() {
-        let allSimple = tubes.allSatisfy { $0.liquids.count <= 1 }
-        guard allSimple else { return }
+        guard tubes.allSatisfy({ $0.liquids.count <= 1 }) else { return }
 
         let groupIds = tubes.compactMap(\.liquids.first?.groupId)
         guard groupIds.count == Set(groupIds).count else { return }
@@ -326,9 +325,9 @@ final class GameEngine {
         guard canUndo, let snapshot = undoHistory.popLast() else { return }
         moveCount = max(0, moveCount - 1)
 
-        for (index, liquids) in snapshot.enumerated() where index < tubes.count {
-            tubes[index].liquids = liquids
-            tubes[index].resetAnimation()
+        for (tube, liquids) in zip(tubes, snapshot) {
+            tube.liquids = liquids
+            tube.resetAnimation()
         }
     }
 
@@ -337,9 +336,7 @@ final class GameEngine {
     func restart() {
         pourTask?.cancel()
         pourTask = nil
-        for tube in tubes {
-            tube.resetAnimation()
-        }
+        tubes.forEach { $0.resetAnimation() }
         tubes.removeAll()
         isTransferring = false
         pourAnimation = nil
