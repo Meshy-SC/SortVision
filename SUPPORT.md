@@ -2,6 +2,14 @@
 
 **Welcome to SortVision Support.** We are here to help you get the most out of your puzzle experience.
 
+## Report an Issue
+
+To report a bug or request a fix, open a GitHub issue and fill in the form there:
+
+**https://github.com/Meshy-SC/SortVision/issues/new**
+
+You can also browse existing reports on the [GitHub Issues page](https://github.com/Meshy-SC/SortVision/issues).
+
 ## Supported Platforms
 
 SortVision is available on the following Apple platforms:
@@ -78,7 +86,7 @@ Every level has a verified solution. Try using a Solution Credit to see the opti
 
 ## Contact Us
 
-If you need further assistance or have feedback, we would love to hear from you.
+If you need further assistance or have feedback, we would love to hear from you. You can [open a GitHub issue](https://github.com/Meshy-SC/SortVision/issues/new) or email us.
 
 **Email:** davinci.dalhi@gmail.com
 
